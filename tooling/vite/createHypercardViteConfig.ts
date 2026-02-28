@@ -46,6 +46,8 @@ export function createHypercardViteConfig(options: HypercardViteConfigOptions = 
       alias: {
         '@hypercard/engine': path.resolve(__dirname, '../../../go-go-os/packages/engine/src'),
         '@hypercard/desktop-os': path.resolve(__dirname, '../../../go-go-os/packages/desktop-os/src'),
+        '@hypercard/chat-runtime': path.resolve(__dirname, '../../../go-go-os/packages/chat-runtime/src'),
+        '@hypercard/hypercard-runtime': path.resolve(__dirname, '../../../go-go-os/packages/hypercard-runtime/src'),
         '@hypercard/confirm-runtime': path.resolve(__dirname, '../../../go-go-os/packages/confirm-runtime/src'),
       },
     },

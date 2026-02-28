@@ -3,7 +3,7 @@ import {
   chatSessionReducer,
   chatWindowReducer,
   timelineReducer,
-} from '@hypercard/engine';
+} from '@hypercard/chat-runtime';
 import { createAppStore } from '@hypercard/hypercard-runtime';
 import { confirmRuntimeReducer } from '@hypercard/confirm-runtime';
 import { inventoryReducer } from '../features/inventory/inventorySlice';

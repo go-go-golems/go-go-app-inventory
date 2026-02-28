@@ -1,13 +1,15 @@
 import { formatAppKey, parseAppKey, type LaunchReason, type LauncherHostContext } from '@hypercard/desktop-os';
 import {
+  showToast,
+} from '@hypercard/engine';
+import {
   ChatConversationWindow,
   ensureChatModulesRegistered,
   EventViewerWindow,
   registerChatRuntimeModule,
-  showToast,
   TimelineDebugWindow,
   chatProfilesSlice,
-} from '@hypercard/engine';
+} from '@hypercard/chat-runtime';
 import {
   registerHypercardTimelineModule,
   RuntimeCardDebugWindow,

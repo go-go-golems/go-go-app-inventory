@@ -13,6 +13,8 @@
       "@hypercard/desktop-os/*": ["../../../go-go-os/packages/desktop-os/src/*"],
       "@hypercard/engine": ["../../../go-go-os/packages/engine/src"],
       "@hypercard/engine/*": ["../../../go-go-os/packages/engine/src/*"],
+      "@hypercard/chat-runtime": ["../../../go-go-os/packages/chat-runtime/src"],
+      "@hypercard/chat-runtime/*": ["../../../go-go-os/packages/chat-runtime/src/*"],
       "@hypercard/hypercard-runtime": ["../../../go-go-os/packages/hypercard-runtime/src"],
       "@hypercard/hypercard-runtime/*": ["../../../go-go-os/packages/hypercard-runtime/src/*"],
       "@hypercard/confirm-runtime": ["../../../go-go-os/packages/confirm-runtime/src"],
@@ -23,6 +25,7 @@
   "references": [
     { "path": "../../../go-go-os/packages/desktop-os" },
     { "path": "../../../go-go-os/packages/engine" },
+    { "path": "../../../go-go-os/packages/chat-runtime" },
     { "path": "../../../go-go-os/packages/hypercard-runtime" },
     { "path": "../../../go-go-os/packages/confirm-runtime" }
   ]
