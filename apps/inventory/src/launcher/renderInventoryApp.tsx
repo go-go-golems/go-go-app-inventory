@@ -1,10 +1,8 @@
 import { formatAppKey, parseAppKey, type LaunchReason, type LauncherHostContext } from '@hypercard/desktop-os';
 import {
   ChatConversationWindow,
-  CodeEditorWindow,
   ensureChatModulesRegistered,
   EventViewerWindow,
-  getEditorInitialCode,
   registerChatRuntimeModule,
   registerHypercardTimelineModule,
   RuntimeCardDebugWindow,
@@ -37,7 +35,6 @@ export const INVENTORY_API_BASE_PREFIX_FALLBACK = '/api/apps/inventory';
 const CHAT_INSTANCE_PREFIX = 'chat-';
 const EVENT_VIEW_INSTANCE_PREFIX = 'event-viewer-';
 const TIMELINE_DEBUG_INSTANCE_PREFIX = 'timeline-debug-';
-const CODE_EDITOR_INSTANCE_PREFIX = 'code-editor-';
 const RUNTIME_DEBUG_INSTANCE = 'runtime-debug';
 const REDUX_PERF_INSTANCE = 'redux-perf';
 const FOLDER_INSTANCE = 'folder';
@@ -1026,10 +1023,6 @@ export function InventoryLauncherAppWindow({
   }
   if (instanceId === REDUX_PERF_INSTANCE) {
     return <ReduxPerfWindow />;
-  }
-  if (instanceId.startsWith(CODE_EDITOR_INSTANCE_PREFIX)) {
-    const cardId = instanceId.slice(CODE_EDITOR_INSTANCE_PREFIX.length);
-    return <CodeEditorWindow cardId={cardId} initialCode={getEditorInitialCode(cardId)} />;
   }
 
   return (
