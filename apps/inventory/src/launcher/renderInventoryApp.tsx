@@ -4,14 +4,16 @@ import {
   ensureChatModulesRegistered,
   EventViewerWindow,
   registerChatRuntimeModule,
-  registerHypercardTimelineModule,
-  RuntimeCardDebugWindow,
   showToast,
   TimelineDebugWindow,
   chatProfilesSlice,
 } from '@hypercard/engine';
+import {
+  registerHypercardTimelineModule,
+  RuntimeCardDebugWindow,
+  PluginCardSessionHost,
+} from '@hypercard/hypercard-runtime';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
-import { PluginCardSessionHost } from '@hypercard/engine/desktop-hypercard-adapter';
 import {
   DesktopIconLayer,
   type DesktopActionEntry,

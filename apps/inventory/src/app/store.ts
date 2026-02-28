@@ -2,9 +2,9 @@ import {
   chatProfilesReducer,
   chatSessionReducer,
   chatWindowReducer,
-  createAppStore,
   timelineReducer,
 } from '@hypercard/engine';
+import { createAppStore } from '@hypercard/hypercard-runtime';
 import { confirmRuntimeReducer } from '@hypercard/confirm-runtime';
 import { inventoryReducer } from '../features/inventory/inventorySlice';
 import { salesReducer } from '../features/sales/salesSlice';
