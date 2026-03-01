@@ -47,5 +47,5 @@ Use this repo when you are:
 - evolving inventory launcher module contract exported to composition host
 
 Use other repos when you are:
-- editing shared desktop engine/platform APIs -> `go-go-os`
+- editing shared desktop engine/platform APIs -> `go-go-os-frontend`
 - editing launcher shell composition, dist sync, binary assembly -> `wesen-os`
