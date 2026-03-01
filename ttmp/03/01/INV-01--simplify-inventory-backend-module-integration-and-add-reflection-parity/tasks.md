@@ -31,19 +31,19 @@
 
 ## Phase 4: Composition Migration (wesen-os)
 
-- [ ] Update `wesen-os` launcher to use inventory module from `go-go-app-inventory/pkg/backendmodule`.
-- [ ] Remove or retire `wesen-os/cmd/wesen-os-launcher/inventory_backend_module.go`.
-- [ ] Update integration tests to assert inventory reflection endpoint.
-- [ ] Run launcher integration tests and verify no route regressions.
+- [x] Update `wesen-os` launcher to use inventory module from `go-go-app-inventory/pkg/backendmodule`.
+- [x] Remove or retire `wesen-os/cmd/wesen-os-launcher/inventory_backend_module.go`.
+- [x] Update integration tests to assert inventory reflection endpoint.
+- [x] Run launcher integration tests and verify no route regressions.
 
 ## Phase 5: Runtime Verification
 
-- [ ] Verify `/api/os/apps` shows inventory reflection hint.
-- [ ] Verify `/api/os/apps/inventory/reflection` returns 200 with expected payload.
-- [ ] Verify existing inventory runtime paths still work (`/chat`, `/ws`, `/api/timeline`, profile APIs, `/confirm`).
+- [x] Verify `/api/os/apps` shows inventory reflection hint.
+- [x] Verify `/api/os/apps/inventory/reflection` returns 200 with expected payload.
+- [x] Verify existing inventory runtime paths still work (`/chat`, `/ws`, `/api/timeline`, profile APIs, `/confirm`).
 
 ## Phase 6: Cleanup and Docs
 
-- [ ] Update inventory README (if needed) with new backend module package ownership.
-- [ ] Update relevant `wesen-os` docs that mention inventory wrapper-specific behavior.
-- [ ] Record final migration notes and any follow-up tasks.
+- [x] Update inventory README (if needed) with new backend module package ownership.
+- [x] Update relevant `wesen-os` docs that mention inventory wrapper-specific behavior.
+- [x] Record final migration notes and any follow-up tasks.
