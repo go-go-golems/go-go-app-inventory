@@ -9,6 +9,7 @@ It owns both:
 ## What Lives Here
 
 - Backend/domain packages:
+  - `pkg/backendmodule`
   - `pkg/inventorydb`
   - `pkg/inventorytools`
   - `pkg/pinoweb`
