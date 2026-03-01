@@ -33,6 +33,12 @@ func buildReflectionDocument() *backendhost.ModuleReflectionDocument {
 				Path:        "go-go-app-inventory/README.md",
 				Description: "Repository overview and ownership boundaries",
 			},
+			{
+				ID:          "inventory-docs-overview",
+				Title:       "Inventory Module Overview",
+				URL:         basePath + "/docs/overview",
+				Description: "Backend module architecture and ownership boundaries",
+			},
 		},
 		APIs: []backendhost.ReflectionAPI{
 			{
@@ -77,7 +83,20 @@ func buildReflectionDocument() *backendhost.ModuleReflectionDocument {
 				Summary: "Start confirm operator interactions",
 				Tags:    []string{"confirm"},
 			},
+			{
+				ID:      "docs-list",
+				Method:  http.MethodGet,
+				Path:    basePath + "/docs",
+				Summary: "List available inventory module docs",
+				Tags:    []string{"docs"},
+			},
+			{
+				ID:      "docs-get",
+				Method:  http.MethodGet,
+				Path:    basePath + "/docs/{slug}",
+				Summary: "Fetch one inventory module doc by slug",
+				Tags:    []string{"docs"},
+			},
 		},
 	}
 }
-

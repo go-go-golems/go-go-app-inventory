@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-go-golems/go-go-app-inventory/pkg/backendcomponent"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
 	gepprofiles "github.com/go-go-golems/geppetto/pkg/profiles"
+	"github.com/go-go-golems/go-go-app-inventory/pkg/backendcomponent"
 	"github.com/go-go-golems/go-go-os-backend/pkg/backendhost"
+	"github.com/go-go-golems/go-go-os-backend/pkg/docmw"
 	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
 	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
+	"github.com/pkg/errors"
 )
 
 const AppID = backendcomponent.AppID
@@ -18,6 +20,8 @@ const AppID = backendcomponent.AppID
 // contract used by composition runtimes.
 type Module struct {
 	component backendcomponent.Component
+	docStore  *docmw.DocStore
+	docErr    error
 }
 
 type Options struct {
@@ -34,6 +38,7 @@ type Options struct {
 
 var _ backendhost.AppBackendModule = (*Module)(nil)
 var _ backendhost.ReflectiveAppBackendModule = (*Module)(nil)
+var _ backendhost.DocumentableAppBackendModule = (*Module)(nil)
 
 func NewModule(opts Options) *Module {
 	componentOpts := backendcomponent.Options{
@@ -47,8 +52,11 @@ func NewModule(opts Options) *Module {
 		WriteSource:           opts.WriteSource,
 		ConfirmMountPath:      opts.ConfirmMountPath,
 	}
+	docStore, docErr := loadDocStore()
 	return &Module{
 		component: backendcomponent.NewInventoryBackendComponent(componentOpts),
+		docStore:  docStore,
+		docErr:    docErr,
 	}
 }
 
@@ -64,10 +72,19 @@ func (m *Module) Manifest() backendhost.AppBackendManifest {
 }
 
 func (m *Module) MountRoutes(mux *http.ServeMux) error {
-	return m.component.MountRoutes(mux)
+	if err := m.component.MountRoutes(mux); err != nil {
+		return err
+	}
+	if m.docStore == nil {
+		return nil
+	}
+	return docmw.MountRoutes(mux, m.docStore)
 }
 
 func (m *Module) Init(ctx context.Context) error {
+	if m.docErr != nil {
+		return errors.Wrap(m.docErr, "load inventory docs store")
+	}
 	return m.component.Init(ctx)
 }
 
@@ -81,4 +98,8 @@ func (m *Module) Stop(ctx context.Context) error {
 
 func (m *Module) Health(ctx context.Context) error {
 	return m.component.Health(ctx)
+}
+
+func (m *Module) DocStore() *docmw.DocStore {
+	return m.docStore
 }
