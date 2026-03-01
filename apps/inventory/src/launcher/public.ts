@@ -1,0 +1,1 @@
+export { inventoryLauncherModule } from './module';

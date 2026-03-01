@@ -1,58 +1,51 @@
-# GO GO TEMPLATE
+# go-go-app-inventory
 
-```
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  __   __  _______  ___      _______  _______  _______ 
-|       ||       ||  |_|  ||       ||   |    |   _   ||       ||       |
-|_     _||    ___||       ||    _  ||   |    |  |_|  ||_     _||    ___|
-  |   |  |   |___ |       ||   |_| ||   |    |       |  |   |  |   |___ 
-  |   |  |    ___||       ||    ___||   |___ |       |  |   |  |    ___|
-  |   |  |   |___ | ||_|| ||   |    |       ||   _   |  |   |  |   |___ 
-  |___|  |_______||_|   |_||___|    |_______||__| |__|  |___|  |_______|
+`go-go-app-inventory` is the inventory domain repository.
+
+It owns both:
+- inventory backend/domain runtime
+- inventory frontend app package (`@hypercard/inventory`)
+
+## What Lives Here
+
+- Backend/domain packages:
+  - `pkg/inventorydb`
+  - `pkg/inventorytools`
+  - `pkg/pinoweb`
+  - related inventory API/service packages
+- Frontend workspace:
+  - `apps/inventory`
+
+## Frontend Commands
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run storybook
+npm run typecheck
 ```
 
----
+## Public Frontend API Surface
 
+Launcher composition should import inventory via package exports, not source internals.
+
+- `@hypercard/inventory`
+- `@hypercard/inventory/launcher`
+- `@hypercard/inventory/reducers`
+
+## Backend Tests
+
+```bash
+GOWORK=off go test ./...
 ```
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  ___      _______  __   __  _______ 
-|       ||       ||   |    |       ||  |_|  ||       |
-|    ___||   _   ||   |    |    ___||       ||  _____|
-|   | __ |  | |  ||   |    |   |___ |       || |_____ 
-|   ||  ||  |_|  ||   |___ |    ___||       ||_____  |
-|   |_| ||       ||       ||   |___ | ||_|| | _____| |
-|_______||_______||_______||_______||_|   |_||_______|
- __   __  _______  ___   _  _______    __   __  _______  ______   _______ 
-|  |_|  ||   _   ||   | | ||       |  |  |_|  ||       ||    _ | |       |
-|       ||  |_|  ||   |_| ||    ___|  |       ||   _   ||   | || |    ___|
-|       ||       ||      _||   |___   |       ||  | |  ||   |_|| |   |___ 
-|       ||       ||     |_ |    ___|  |       ||  |_|  ||    __ ||    ___|
-| ||_|| ||   _   ||    _  ||   |___   | ||_|| ||       ||   |  |||   |___ 
-|_|   |_||__| |__||___| |_||_______|  |_|   |_||_______||___|  |||_______|
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  ___      _______  __   __  _______ 
-|       ||       ||   |    |       ||  |_|  ||       |
-|    ___||   _   ||   |    |    ___||       ||  _____|
-|   | __ |  | |  ||   |    |   |___ |       || |_____ 
-|   ||  ||  |_|  ||   |___ |    ___||       ||_____  |
-|   |_| ||       ||       ||   |___ | ||_|| | _____| |
-|_______||_______||_______||_______||_|   |_||_______|
-```
+
+## Ownership Boundary
+
+Use this repo when you are:
+- adding inventory features, reducers, selectors, domain tools, or API handlers
+- evolving inventory launcher module contract exported to composition host
+
+Use other repos when you are:
+- editing shared desktop engine/platform APIs -> `go-go-os-frontend`
+- editing launcher shell composition, dist sync, binary assembly -> `wesen-os`
