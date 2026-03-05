@@ -112,8 +112,8 @@ github.com/go-go-golems/glazed v1.0.4 h1:QOrPFq3RnL36I3yYkbc/frMsGDyWIZnwpQyNAQP
 github.com/go-go-golems/glazed v1.0.4/go.mod h1:k+KwcIT68nAam+p1JTGbCtT4Pr20sCwYPKr1FFHIazo=
 github.com/go-go-golems/go-go-goja v0.4.0 h1:ZsryOWZR8pBsDjyh+lI6NPNtwafD3mrP0Ki/c2X3CWg=
 github.com/go-go-golems/go-go-goja v0.4.0/go.mod h1:oBDrZqxdjrfJnVWRn/MliybokXf8gsBANNiWKOSXfZY=
-github.com/go-go-golems/go-go-os-backend v0.0.1 h1:zrPVEi/gNPbp18fDTsyh7Zh5f8s8kBEODLrEkQp9a8E=
-github.com/go-go-golems/go-go-os-backend v0.0.1/go.mod h1:B00AkqWun/9/0HDcDEf9yrWvF1cj1GlmpZ61Z/Yrn/8=
+github.com/go-go-golems/go-go-os-backend v0.0.3 h1:REywueg/ctJNOXNibBYsGh2qzxKZc6GS/cWKCqnCe5M=
+github.com/go-go-golems/go-go-os-backend v0.0.3/go.mod h1:0DY27hqP/ZQywsyHI5mOnA9EHq2GjlxtbAehcwAPBEw=
 github.com/go-go-golems/pinocchio v0.10.1 h1:hk43qcBfQHn3W+EY+6iO9vZk5vBjrbizq3V7AQDX3fo=
 github.com/go-go-golems/pinocchio v0.10.1/go.mod h1:RqPVk3L3QCdZ3AJBgV0g2pk3HwSGsqGquV5zbIXk3y4=
 github.com/go-go-golems/plz-confirm v0.0.4 h1:BiCcTHzMU5FdfUiOzNcUJGGShWViYW86jjnqu+wQBAY=
