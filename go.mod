@@ -5,6 +5,7 @@ go 1.25.7
 require (
 	github.com/go-go-golems/geppetto v0.10.2
 	github.com/go-go-golems/glazed v1.0.4
+	github.com/go-go-golems/go-go-os-backend v0.0.3
 	github.com/go-go-golems/pinocchio v0.10.1
 	github.com/go-go-golems/plz-confirm v0.0.4
 	github.com/google/uuid v1.6.0
@@ -57,7 +58,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-go-golems/go-go-goja v0.4.0 // indirect
-	github.com/go-go-golems/go-go-os-backend v0.0.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
