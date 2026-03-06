@@ -217,6 +217,21 @@ type inventoryRuntimeCardSession struct {
 	lastValid *inventoryRuntimeCardPayload
 }
 
+func newRuntimeCardErrorEvent(itemID string, errMsg string, raw []byte, data any) *HypercardCardErrorEvent {
+	ev := &HypercardCardErrorEvent{
+		EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
+		ItemID:    itemID,
+		Error:     errMsg,
+	}
+	if len(raw) > 0 {
+		ev.Raw = string(raw)
+	}
+	if data != nil {
+		ev.Data = data
+	}
+	return ev
+}
+
 func (s *inventoryRuntimeCardSession) OnStart(context.Context) []events.Event {
 	return nil
 }
@@ -265,33 +280,25 @@ func (s *inventoryRuntimeCardSession) OnRaw(ctx context.Context, chunk []byte) [
 func (s *inventoryRuntimeCardSession) OnCompleted(ctx context.Context, raw []byte, success bool, err error) []events.Event {
 	evs := []events.Event{}
 	if err != nil {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     err.Error(),
-		}}
+		var data any
+		if s.lastValid != nil {
+			data = payloadToMap(s.lastValid)
+		}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, err.Error(), raw, data)}
 	}
 	if s.ctrl == nil {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     "runtime card parser not initialized",
-		}}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime card parser not initialized", raw, nil)}
 	}
 	snap, parseErr := s.ctrl.FinalBytes(raw)
 	if parseErr != nil {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     parseErr.Error(),
-		}}
+		var data any
+		if s.lastValid != nil {
+			data = payloadToMap(s.lastValid)
+		}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, parseErr.Error(), raw, data)}
 	}
 	if snap == nil {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     "missing runtime card payload",
-		}}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "missing runtime card payload", raw, nil)}
 	}
 	name := strings.TrimSpace(snap.Name)
 	title := strings.TrimSpace(snap.Title)
@@ -300,27 +307,15 @@ func (s *inventoryRuntimeCardSession) OnCompleted(ctx context.Context, raw []byt
 		displayName = title
 	}
 	if displayName == "" {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     "runtime card name is required",
-		}}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime card name is required", raw, payloadToMap(snap))}
 	}
 	cardID := strings.TrimSpace(snap.Card.ID)
 	if cardID == "" {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     "runtime card.id is required",
-		}}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime card.id is required", raw, payloadToMap(snap))}
 	}
 	cardCode := strings.TrimSpace(snap.Card.Code)
 	if cardCode == "" {
-		return []events.Event{&HypercardCardErrorEvent{
-			EventImpl: events.EventImpl{Type_: eventTypeHypercardCardError},
-			ItemID:    s.itemID,
-			Error:     "runtime card.code is required",
-		}}
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime card.code is required", raw, payloadToMap(snap))}
 	}
 
 	if !s.started {

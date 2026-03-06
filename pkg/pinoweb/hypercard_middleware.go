@@ -114,6 +114,7 @@ func NewInventoryArtifactGeneratorMiddleware(cfg InventoryArtifactGeneratorConfi
 					},
 					ItemID: baseID + ":card",
 					Error:  "missing structured card block <hypercard:card:v2>",
+					Raw:    assistantText,
 				})
 			}
 

@@ -34,6 +34,16 @@ func countEventsByType(list []events.Event, t events.EventType) int {
 	return count
 }
 
+func firstRuntimeCardErrorEvent(list []events.Event) *HypercardCardErrorEvent {
+	for _, ev := range list {
+		cardErr, ok := ev.(*HypercardCardErrorEvent)
+		if ok {
+			return cardErr
+		}
+	}
+	return nil
+}
+
 func TestWidgetExtractor_TitleGatedStartThenReady(t *testing.T) {
 	RegisterInventoryHypercardExtensions()
 
@@ -140,6 +150,15 @@ func TestRuntimeCardExtractor_MissingCardCode(t *testing.T) {
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
+
+	cardErr := firstRuntimeCardErrorEvent(col.events)
+	require.NotNil(t, cardErr)
+	require.Equal(t, "runtime card.code is required", cardErr.Error)
+	require.Contains(t, cardErr.Raw, "name: Missing Code")
+	require.Contains(t, cardErr.Raw, "card:")
+	data, ok := cardErr.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "Missing Code", data["name"])
 }
 
 func TestRuntimeCardExtractor_MissingCardId(t *testing.T) {
@@ -168,6 +187,42 @@ func TestRuntimeCardExtractor_MissingCardId(t *testing.T) {
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
+
+	cardErr := firstRuntimeCardErrorEvent(col.events)
+	require.NotNil(t, cardErr)
+	require.Equal(t, "runtime card.id is required", cardErr.Error)
+	require.Contains(t, cardErr.Raw, "name: Missing ID")
+	data, ok := cardErr.Data.(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "Missing ID", data["name"])
+}
+
+func TestRuntimeCardExtractor_MalformedBlockIncludesRawPayload(t *testing.T) {
+	RegisterInventoryHypercardExtensions()
+
+	col := &collectorSink{}
+	sink := structuredsink.NewFilteringSink(col, structuredsink.Options{
+		Malformed: structuredsink.MalformedErrorEvents,
+	}, &inventoryRuntimeCardExtractor{})
+
+	meta := events.EventMetadata{ID: uuid.New()}
+	full := "<hypercard:card:v2>\n```yaml\n" +
+		"name: Broken Card\n" +
+		"title: Broken\n" +
+		"artifact:\n" +
+		"  id: broken-card\n" +
+		"  data: {}\n" +
+		"card:\n" +
+		"  id: brokenCard\n"
+
+	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
+	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+
+	cardErr := firstRuntimeCardErrorEvent(col.events)
+	require.NotNil(t, cardErr)
+	require.NotEmpty(t, cardErr.Error)
+	require.Contains(t, cardErr.Raw, "name: Broken Card")
+	require.Contains(t, cardErr.Raw, "card:")
 }
 
 func TestRuntimeCardExtractor_StreamingName(t *testing.T) {

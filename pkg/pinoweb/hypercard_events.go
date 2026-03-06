@@ -113,6 +113,8 @@ type HypercardCardErrorEvent struct {
 	events.EventImpl
 	ItemID string `json:"item_id"`
 	Error  string `json:"error"`
+	Raw    string `json:"raw,omitempty"`
+	Data   any    `json:"data,omitempty"`
 }
 
 var registerHypercardExtensionsOnce sync.Once
@@ -286,10 +288,17 @@ func registerHypercardSEMMappings() {
 		return [][]byte{frame}, nil
 	})
 	semregistry.RegisterByType[*HypercardCardErrorEvent](func(ev *HypercardCardErrorEvent) ([][]byte, error) {
-		frame, err := semFrame("hypercard.card.error", ev.ItemID, map[string]any{
+		data := map[string]any{
 			"itemId": ev.ItemID,
 			"error":  ev.Error,
-		})
+		}
+		if strings.TrimSpace(ev.Raw) != "" {
+			data["raw"] = ev.Raw
+		}
+		if ev.Data != nil {
+			data["data"] = ev.Data
+		}
+		frame, err := semFrame("hypercard.card.error", ev.ItemID, data)
 		if err != nil {
 			return nil, err
 		}
