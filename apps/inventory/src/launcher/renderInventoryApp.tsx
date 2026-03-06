@@ -6,12 +6,11 @@ import {
   ChatConversationWindow,
   ensureChatModulesRegistered,
   EventViewerWindow,
-  registerChatRuntimeModule,
   TimelineDebugWindow,
   chatProfilesSlice,
 } from '@hypercard/chat-runtime';
 import {
-  registerHypercardTimelineModule,
+  HypercardCardRenderer,
   RuntimeCardDebugWindow,
   PluginCardSessionHost,
 } from '@hypercard/hypercard-runtime';
@@ -73,10 +72,6 @@ interface InventoryRootState {
   };
 }
 
-registerChatRuntimeModule({
-  id: 'chat.hypercard-timeline',
-  register: registerHypercardTimelineModule,
-});
 ensureChatModulesRegistered();
 
 function nextInstanceId(prefix: string): string {
@@ -954,6 +949,9 @@ function InventoryChatAssistantWindow({
       profileRegistry="default"
       profileScopeKey={`conv:${convId}`}
       renderMode={renderMode}
+      timelineRenderers={{
+        'hypercard.card.v2': HypercardCardRenderer,
+      }}
       conversationContextActions={conversationContextActions}
       headerActions={
         <>
