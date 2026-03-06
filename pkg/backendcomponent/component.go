@@ -80,7 +80,7 @@ func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
 				MiddlewareDefinitions:           opts.MiddlewareDefinitions,
 				WriteActor:                      writeActor,
 				WriteSource:                     writeSource,
-				EnableCurrentProfileCookieRoute: true,
+				EnableCurrentProfileCookieRoute: false,
 			},
 			ConfirmMountPath: confirmMountPath,
 		}),
