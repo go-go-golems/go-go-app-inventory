@@ -398,7 +398,29 @@ func registerHypercardTimelineHandlers() {
 			Props: props,
 		})
 	})
-	registerResult("hypercard.card.v2", "hypercard.card.v2")
+	webchat.RegisterTimelineHandler("hypercard.card.v2", func(ctx context.Context, p *webchat.TimelineProjector, ev webchat.TimelineSemEvent, _ int64) error {
+		data := parseTimelineData(ev.Data)
+		resultStruct, err := structpb.NewStruct(data)
+		if err != nil {
+			resultStruct, _ = structpb.NewStruct(map[string]any{"raw": string(ev.Data)})
+		}
+		props, err := structpb.NewStruct(map[string]any{
+			"schemaVersion": 1,
+			"toolCallId":    ev.ID,
+			"result":        resultStruct.AsMap(),
+			"resultRaw":     string(ev.Data),
+			"status":        "success",
+			"detail":        "ready",
+		})
+		if err != nil {
+			return err
+		}
+		return p.Upsert(ctx, ev.Seq, &timelinepb.TimelineEntityV2{
+			Id:    ev.ID + ":result",
+			Kind:  "hypercard.card.v2",
+			Props: props,
+		})
+	})
 
 	registerSuggestions := func(eventType string) {
 		webchat.RegisterTimelineHandler(eventType, func(ctx context.Context, p *webchat.TimelineProjector, ev webchat.TimelineSemEvent, _ int64) error {

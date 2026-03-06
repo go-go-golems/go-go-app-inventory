@@ -181,3 +181,56 @@ func TestHypercardTimelineHandlers_CardUpdateProjectsStreamingCardResult(t *test
 	require.Equal(t, "runtime-low-stock", cardBody["id"])
 	require.Equal(t, "({ ui }) => ({ render() { return ui.text(\"low stock\"); } })", cardBody["code"])
 }
+
+func TestHypercardTimelineHandlers_CardReadyOverridesStreamingStatus(t *testing.T) {
+	webchat.ClearTimelineHandlers()
+	t.Cleanup(webchat.ClearTimelineHandlers)
+	registerHypercardTimelineHandlers()
+
+	store := chatstore.NewInMemoryTimelineStore(100)
+	projector := webchat.NewTimelineProjector("conv-card-ready", store, nil)
+
+	require.NoError(t, projector.ApplySemFrame(context.Background(), semFrameForTest(
+		t,
+		"hypercard.card.update",
+		"card-call-2",
+		100,
+		map[string]any{
+			"itemId": "card-call-2",
+			"title":  "Welcome to Disco Fever!",
+			"data": map[string]any{
+				"artifact": map[string]any{"id": "disco-fever-hello-world", "data": map[string]any{}},
+				"card": map[string]any{
+					"id":   "discoFeverHelloWorldCard",
+					"code": "({ ui }) => ({ render() { return ui.text(\"hello\"); } })",
+				},
+			},
+		},
+	)))
+	require.NoError(t, projector.ApplySemFrame(context.Background(), semFrameForTest(
+		t,
+		"hypercard.card.v2",
+		"card-call-2",
+		101,
+		map[string]any{
+			"itemId": "card-call-2",
+			"title":  "Welcome to Disco Fever!",
+			"data": map[string]any{
+				"artifact": map[string]any{"id": "disco-fever-hello-world", "data": map[string]any{}},
+				"card": map[string]any{
+					"id":   "discoFeverHelloWorldCard",
+					"code": "({ ui }) => ({ render() { return ui.text(\"hello\"); } })",
+				},
+			},
+		},
+	)))
+
+	snap, err := store.GetSnapshot(context.Background(), "conv-card-ready", 0, 100)
+	require.NoError(t, err)
+	require.Equal(t, uint64(101), snap.Version)
+	require.Len(t, snap.Entities, 1)
+
+	props := snap.Entities[0].Props.AsMap()
+	require.Equal(t, "success", props["status"])
+	require.Equal(t, "ready", props["detail"])
+}
