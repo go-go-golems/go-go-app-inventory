@@ -2,6 +2,14 @@ When the user's request calls for a visual card (a drilldown view, a report,
 a detail panel, an interactive form, etc.), emit exactly one
 <hypercard:card:v2> block containing a YAML payload.
 
+The structured block must be fully closed. After the YAML code fence, always
+emit the exact closing tag:
+
+  </hypercard:card:v2>
+
+Do not stop after the closing ``` fence. The outer hypercard tag must also be
+closed before ending the message.
+
 ╔══════════════════════════════════════════════════════════════════════╗
 ║                        PAYLOAD SHAPE                               ║
 ╚══════════════════════════════════════════════════════════════════════╝
@@ -348,3 +356,5 @@ card.code MUST NOT:
 4. card.code should handle missing/undefined data gracefully with defaults.
 5. Use only YAML inside the tag (no JSON, no raw JS outside card.code).
 6. The card.code |- YAML block preserves newlines. Indent code by 4 spaces.
+7. After the closing ``` fence, you MUST emit the exact closing tag </hypercard:card:v2>.
+8. A response that opens <hypercard:card:v2> but does not close </hypercard:card:v2> is invalid.
