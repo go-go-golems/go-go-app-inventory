@@ -30,7 +30,6 @@ type Options struct {
 	ProfileRegistry       gepprofiles.Registry
 	DefaultRegistrySlug   gepprofiles.RegistrySlug
 	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	ExtensionSchemas      []webhttp.ExtensionSchemaDocument
 	WriteActor            string
 	WriteSource           string
 	ConfirmMountPath      string
@@ -47,7 +46,6 @@ func NewModule(opts Options) *Module {
 		ProfileRegistry:       opts.ProfileRegistry,
 		DefaultRegistrySlug:   opts.DefaultRegistrySlug,
 		MiddlewareDefinitions: opts.MiddlewareDefinitions,
-		ExtensionSchemas:      append([]webhttp.ExtensionSchemaDocument(nil), opts.ExtensionSchemas...),
 		WriteActor:            opts.WriteActor,
 		WriteSource:           opts.WriteSource,
 		ConfirmMountPath:      opts.ConfirmMountPath,

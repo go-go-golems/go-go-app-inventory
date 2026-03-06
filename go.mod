@@ -6,6 +6,7 @@ require (
 	github.com/go-go-golems/geppetto v0.10.2
 	github.com/go-go-golems/glazed v1.0.4
 	github.com/go-go-golems/go-go-os-backend v0.0.3
+	github.com/go-go-golems/go-go-os-chat v0.0.0
 	github.com/go-go-golems/pinocchio v0.10.1
 	github.com/go-go-golems/plz-confirm v0.0.4
 	github.com/google/uuid v1.6.0
