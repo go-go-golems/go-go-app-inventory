@@ -4,6 +4,7 @@ import {
 } from '@hypercard/engine';
 import {
   ChatConversationWindow,
+  ChatProfileSelector,
   ensureChatModulesRegistered,
   EventViewerWindow,
   TimelineDebugWindow,
@@ -67,10 +68,15 @@ interface InventoryRootState {
   chatProfiles?: {
     availableProfiles?: Array<{ slug: string; display_name?: string; is_default?: boolean }>;
     selectedProfile?: string | null;
-    selectedRegistry?: string | null;
-    selectedByScope?: Record<string, { profile: string | null; registry: string | null }>;
+    selectedByScope?: Record<string, { profile: string | null }>;
   };
 }
+
+const INVENTORY_STARTER_SUGGESTIONS = [
+  'Show current inventory status',
+  'What items are low stock?',
+  'Summarize today sales',
+];
 
 ensureChatModulesRegistered();
 
@@ -510,16 +516,10 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
         if (!parsed || parsed.kind !== 'profile-select') {
           return 'pass';
         }
-        const state = (ctx.getState?.() ?? {}) as InventoryRootState;
         const scopeKey = `conv:${parsed.convId}`;
-        const selectedRegistry =
-          state.chatProfiles?.selectedByScope?.[scopeKey]?.registry ??
-          state.chatProfiles?.selectedRegistry ??
-          'default';
         ctx.dispatch(
           chatProfilesSlice.actions.setSelectedProfile({
             profile: parsed.profile ?? null,
-            registry: selectedRegistry,
             scopeKey,
           }),
         );
@@ -566,10 +566,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
             return 'pass';
           }
           const scopeKey = `conv:${parsed.convId}`;
-          const selectedRegistry =
-            state.chatProfiles?.selectedByScope?.[scopeKey]?.registry ??
-            state.chatProfiles?.selectedRegistry ??
-            'default';
           const currentProfile =
             state.chatProfiles?.selectedByScope?.[scopeKey]?.profile ??
             state.chatProfiles?.selectedProfile ??
@@ -579,7 +575,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
           ctx.dispatch(
             chatProfilesSlice.actions.setSelectedProfile({
               profile: nextProfile?.slug ?? null,
-              registry: selectedRegistry,
               scopeKey,
             }),
           );
@@ -945,9 +940,8 @@ function InventoryChatAssistantWindow({
       windowId={windowId}
       basePrefix={apiBasePrefix}
       title="Inventory Chat"
-      enableProfileSelector
-      profileRegistry="default"
-      profileScopeKey={`conv:${convId}`}
+      profilePolicy={{ kind: 'selectable', scopeKey: `conv:${convId}` }}
+      starterSuggestions={INVENTORY_STARTER_SUGGESTIONS}
       renderMode={renderMode}
       timelineRenderers={{
         'hypercard.card.v2': HypercardCardRenderer,
@@ -955,6 +949,7 @@ function InventoryChatAssistantWindow({
       conversationContextActions={conversationContextActions}
       headerActions={
         <>
+          <ChatProfileSelector convId={convId} basePrefix={apiBasePrefix} scopeKey={`conv:${convId}`} />
           <button type="button" data-part="btn" onClick={openEventViewer} style={{ fontSize: 10, padding: '1px 6px' }}>
             🧭 Events
           </button>
