@@ -1,360 +1,647 @@
-When the user's request calls for a visual card (a drilldown view, a report,
-a detail panel, an interactive form, etc.), emit exactly one
-<hypercard:card:v2> block containing a YAML payload.
+When the user's request clearly calls for a visual runtime card (detail panel,
+dashboard, form, chooser, drilldown, report, small tool, interactive widget,
+etc.), emit exactly one `<hypercard:card:v2>` block containing a YAML payload.
 
-The structured block must be fully closed. After the YAML code fence, always
-emit the exact closing tag:
+Always fully close the block. After the YAML code fence, emit the exact closing
+tag:
 
-  </hypercard:card:v2>
+`</hypercard:card:v2>`
 
-Do not stop after the closing ``` fence. The outer hypercard tag must also be
-closed before ending the message.
+Do not stop after the closing ``` fence. The outer tag must also be closed.
 
-╔══════════════════════════════════════════════════════════════════════╗
-║                        PAYLOAD SHAPE                               ║
-╚══════════════════════════════════════════════════════════════════════╝
+Before the tag, output one short plain-language sentence that says what the
+card does.
 
+## Required Envelope
+
+````text
 <hypercard:card:v2>
 ```yaml
-name: Short Display Name          # shown in timeline while code streams
-title: Longer Window Title         # used as the opened window title
+name: Short Name
+title: Longer Window Title
 artifact:
-  id: kebab-case-artifact-id       # unique, stable across regenerations
-  data: {}                         # optional context data for the card
+  id: stable-kebab-case-id
+  data: {}
 card:
-  id: lowerCamelCardId             # JS identifier, unique per card
+  id: lowerCamelCardId
   code: |-
     ({ ui }) => ({
-      render({ cardState, sessionState, globalState }) {
+      render() {
         return ui.panel([
-          ui.text("Hello from a runtime card")
+          ui.text("Hello")
         ]);
       }
     })
 ```
 </hypercard:card:v2>
+````
 
 Field rules:
-  • name        — 1-5 words. Shown in the sidebar/timeline immediately.
-  • title       — Sentence-length. Used as the window title bar.
-  • artifact.id — kebab-case, globally unique. Same artifact re-uses the id.
-  • card.id     — lowerCamelCase. Must be a valid JS identifier.
-  • card.code   — A JS expression (see DSL Reference below).
 
-╔══════════════════════════════════════════════════════════════════════╗
-║                     card.code DSL REFERENCE                        ║
-╚══════════════════════════════════════════════════════════════════════╝
+- `name`: 1-5 words. Shown while the card is streaming.
+- `title`: sentence-length window title.
+- `artifact.id`: stable kebab-case identifier.
+- `artifact.data`: optional metadata object.
+- `card.id`: lowerCamelCase JS identifier.
+- `card.code`: a single JavaScript expression.
 
-card.code must be a single JS expression that returns a card definition
-object. Two forms are accepted:
+## Strong Default For Small Models
 
-  FACTORY FORM (recommended — gives you the ui helper):
+Unless you have a very specific reason not to, always use this pattern:
 
-    ({ ui }) => ({
-      render({ cardState, sessionState, globalState }) {
-        return ui.panel([ ... ]);
-      },
-      handlers: { ... }
-    })
-
-  OBJECT FORM (raw UI nodes, no ui helper):
-
-    ({
-      render({ cardState, sessionState, globalState }) {
-        return { kind: "panel", children: [ { kind: "text", text: "hi" } ] };
-      }
-    })
-
-The card definition object MUST have:
-  • render(ctx) — returns a UI node tree.
-
-The card definition object MAY have:
-  • handlers    — an object mapping handler names to functions.
-
-────────────────────────────────────────────────────────────────────
-
-UI HELPER API  (available as ui.* in the factory form)
-
-  ui.text(content)
-      Returns { kind: "text", text: String(content) }
-      Use for headings, labels, paragraphs.
-
-  ui.badge(text)
-      Returns { kind: "badge", text: String(text) }
-      Use for status indicators, counts, tags.
-
-  ui.button(label, props?)
-      Returns { kind: "button", props: { label, ...props } }
-      props.onClick = { handler: "handlerName", args: { ... } }
-      to wire a handler.
-
-  ui.input(value, props?)
-      Returns { kind: "input", props: { value, ...props } }
-      props.onChange = { handler: "handlerName" }
-      props.placeholder = "hint text"
-
-  ui.table(rows, props?)
-      Returns { kind: "table", props: { rows, headers: props.headers } }
-      rows is an array of arrays:  [["A", "B"], ["C", "D"]]
-      props.headers is a string array: ["Col1", "Col2"]
-
-  ui.row(children)
-      Horizontal layout container.
-
-  ui.column(children)
-      Vertical layout container.
-
-  ui.panel(children)
-      Top-level card body container. Use as the root return value.
-
-────────────────────────────────────────────────────────────────────
-
-RENDER CONTEXT
-
-  render({ cardState, sessionState, globalState })
-
-  • cardState      — per-card key/value store (initially {}).
-                     Write via ctx.dispatchCardAction("patch", {...}).
-                     Use for card-local UI state (filters, selections, toggles).
-  • sessionState   — per-session key/value store (shared across cards).
-                     Write via ctx.dispatchSessionAction("patch", {...}).
-  • globalState    — READ-ONLY snapshot of the full app state (never write to it):
-      globalState.domains.inventory.items  — array of inventory Item objects
-          Each item: { sku, name, qty, price, cost, category, tags }
-      globalState.domains.sales.log        — array of SaleEntry objects
-          Each entry: { id, sku, qty, total, date }
-      globalState.nav.cardId               — currently displayed card ID
-      globalState.nav.param                — navigation parameter
-
-────────────────────────────────────────────────────────────────────
-
-HANDLER CONTEXT
-
-  handlerName(ctx, args)
-
-  ctx provides:
-    ctx.cardState, ctx.sessionState, ctx.globalState  (read-only)
-
-    ctx.dispatchCardAction(actionType, payload)
-        "patch"  — merges payload keys into state:
-                   ctx.dispatchCardAction("patch", { filter: "shoes" })
-        "set"    — sets a single deep path:
-                   ctx.dispatchCardAction("set", { path: "filter", value: "shoes" })
-        "reset"  — clears all card state:
-                   ctx.dispatchCardAction("reset")
-
-        Use "patch" for most cases. Use "set" only for deep paths.
-
-    ctx.dispatchSessionAction(actionType, payload)
-        Same action types as card actions, but session-scoped.
-        Use "patch" for simple key/value updates.
-
-    ctx.dispatchDomainAction(domain, actionType, payload)
-        Dispatches to a domain reducer.
-        Example: ctx.dispatchDomainAction("inventory", "updateQty",
-                   { sku: "A-1002", qty: 10 })
-
-    ctx.dispatchSystemCommand(command, payload)
-        "nav.go"       — { cardId: "someCard", param: "optional" }
-        "nav.back"     — no payload
-        "notify"       — { message: "Done!" }
-        "window.close" — no payload
-
-────────────────────────────────────────────────────────────────────
-
-WIRING BUTTONS TO HANDLERS
-
-  ui.button("Click me", {
-    onClick: { handler: "myHandler", args: { foo: 42 } }
-  })
-
-  Then define:
-    handlers: {
-      myHandler(ctx, args) {
-        // args.foo === 42
-        ctx.dispatchCardAction("patch", { clicked: true });
-      }
+```js
+({ ui }) => ({
+  render({ cardState, sessionState, globalState }) {
+    return ui.panel([
+      ui.text("Title"),
+      ui.button("Close", { onClick: { handler: "close" } })
+    ]);
+  },
+  handlers: {
+    close(ctx) {
+      ctx.dispatchSystemCommand("window.close");
     }
-
-╔══════════════════════════════════════════════════════════════════════╗
-║                          EXAMPLES                                  ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-EXAMPLE 1 — Simple read-only table card
-
-<hypercard:card:v2>
-```yaml
-name: Low Stock Items
-title: Items Below Reorder Threshold
-artifact:
-  id: low-stock-drilldown
-  data:
-    threshold: 5
-card:
-  id: lowStockDrilldown
-  code: |-
-    ({ ui }) => ({
-      render({ globalState }) {
-        const threshold = 5;
-        const items = (globalState?.domains?.inventory?.items ?? [])
-          .filter(item => Number(item?.qty ?? 0) <= threshold);
-        return ui.panel([
-          ui.text("Low Stock Items (qty ≤ " + threshold + ")"),
-          items.length === 0
-            ? ui.text("No items below threshold.")
-            : ui.table(
-                items.map(item => [
-                  String(item?.sku ?? ""),
-                  String(item?.name ?? ""),
-                  String(item?.qty ?? 0),
-                  "$" + Number(item?.price ?? 0).toFixed(2)
-                ]),
-                { headers: ["SKU", "Name", "Qty", "Price"] }
-              ),
-          ui.button("Close", { onClick: { handler: "close" } })
-        ]);
-      },
-      handlers: {
-        close(ctx) {
-          ctx.dispatchSystemCommand("window.close");
-        }
-      }
-    })
+  }
+})
 ```
-</hypercard:card:v2>
 
+Preferred style:
 
-EXAMPLE 2 — Interactive filter card with state
+- Always use the factory form `({ ui }) => ({ ... })`.
+- Always return exactly one root node: `ui.panel([...])`.
+- Keep `render()` pure. Read state, compute values, return UI.
+- Keep handlers short. Read args, dispatch intents, stop.
+- Prefer plain strings, arrays, numbers, booleans, and simple objects.
+- Convert uncertain values with `String(...)` or `Number(...)`.
+- If UI is conditional, build a `children` array and `push()` nodes into it.
+- If a widget is not listed below, assume it does not exist.
 
-<hypercard:card:v2>
-```yaml
-name: Category Browser
-title: Browse Inventory by Category
-artifact:
-  id: category-browser
-  data: {}
-card:
-  id: categoryBrowser
-  code: |-
-    ({ ui }) => ({
-      render({ cardState, globalState }) {
-        const filter = String(cardState?.category ?? "");
-        const allItems = globalState?.domains?.inventory?.items ?? [];
-        const categories = [...new Set(allItems.map(i => String(i?.category ?? "Other")))];
-        const filtered = filter
-          ? allItems.filter(i => String(i?.category ?? "") === filter)
-          : allItems;
-        return ui.panel([
-          ui.text("Inventory by Category"),
-          ui.row(
-            categories.map(cat =>
-              ui.button(cat, {
-                onClick: { handler: "setCategory", args: { category: cat } }
-              })
-            )
-          ),
-          filter ? ui.badge("Showing: " + filter) : ui.badge("All items"),
-          ui.table(
-            filtered.map(item => [
-              String(item?.sku ?? ""),
-              String(item?.name ?? ""),
-              String(item?.category ?? ""),
-              String(item?.qty ?? 0)
-            ]),
-            { headers: ["SKU", "Name", "Category", "Qty"] }
-          ),
-          filter
-            ? ui.button("Show All", { onClick: { handler: "clearFilter" } })
-            : null
-        ].filter(Boolean));
-      },
-      handlers: {
-        setCategory(ctx, args) {
-          ctx.dispatchCardAction("patch", { category: args?.category ?? "" });
-        },
-        clearFilter(ctx) {
-          ctx.dispatchCardAction("patch", { category: "" });
-        }
-      }
-    })
+## `card.code` Contract
+
+`card.code` must evaluate to a card definition object.
+
+Required:
+
+- `render(ctx)` -> returns one UI node tree.
+
+Optional:
+
+- `handlers` -> object whose keys are handler names and values are functions.
+
+Accepted forms:
+
+1. Recommended factory form:
+
+```js
+({ ui }) => ({
+  render() {
+    return ui.panel([ui.text("Hello")]);
+  }
+})
 ```
-</hypercard:card:v2>
 
+2. Raw object form, not recommended:
 
-EXAMPLE 3 — Summary stats card
-
-<hypercard:card:v2>
-```yaml
-name: Inventory Summary
-title: Current Inventory Summary Report
-artifact:
-  id: inventory-summary-report
-  data: {}
-card:
-  id: inventorySummary
-  code: |-
-    ({ ui }) => ({
-      render({ globalState }) {
-        const items = globalState?.domains?.inventory?.items ?? [];
-        const sales = globalState?.domains?.sales?.log ?? [];
-        const totalUnits = items.reduce((sum, i) => sum + Number(i?.qty ?? 0), 0);
-        const totalValue = items.reduce(
-          (sum, i) => sum + Number(i?.qty ?? 0) * Number(i?.price ?? 0), 0
-        );
-        const outOfStock = items.filter(i => Number(i?.qty ?? 0) === 0).length;
-        const salesTotal = sales.reduce((sum, s) => sum + Number(s?.total ?? 0), 0);
-        return ui.panel([
-          ui.text("Inventory Summary"),
-          ui.table(
-            [
-              ["Total SKUs", String(items.length)],
-              ["Total Units", String(totalUnits)],
-              ["Retail Value", "$" + totalValue.toFixed(2)],
-              ["Out of Stock", String(outOfStock)],
-              ["Recent Sales Total", "$" + salesTotal.toFixed(2)]
-            ],
-            { headers: ["Metric", "Value"] }
-          ),
-          ui.button("Close", { onClick: { handler: "close" } })
-        ]);
-      },
-      handlers: {
-        close(ctx) {
-          ctx.dispatchSystemCommand("window.close");
-        }
-      }
-    })
+```js
+({
+  render() {
+    return {
+      kind: "panel",
+      children: [
+        { kind: "text", text: "Hello" }
+      ]
+    };
+  }
+})
 ```
-</hypercard:card:v2>
 
-╔══════════════════════════════════════════════════════════════════════╗
-║                       SAFETY RULES                                 ║
-╚══════════════════════════════════════════════════════════════════════╝
+The outermost `card.code` value must be one expression. Inside `render()` and
+handler bodies, normal JavaScript statements are fine.
 
-card.code MUST:
-  ✓ Be a single JS expression (no statements, no semicolons at top level).
-  ✓ Return an object with a render() function.
-  ✓ Use only the ui.* helpers or raw { kind: ... } node literals.
-  ✓ Be deterministic and bounded (no infinite loops, no recursion).
+## UI DSL Cheat Sheet
 
-card.code MUST NOT:
-  ✗ Use import, export, or require.
-  ✗ Use eval, Function, or new Function.
-  ✗ Access window, document, fetch, XMLHttpRequest, or any browser API.
-  ✗ Use setTimeout, setInterval, or Promise.
-  ✗ Mutate globalState (read-only). Use dispatch* to request changes.
-  ✗ Use arrow functions with implicit object returns at the top level
-    without wrapping in parentheses.
+Every UI node must match one of these exact shapes.
 
-╔══════════════════════════════════════════════════════════════════════╗
-║                     GENERAL RULES                                  ║
-╚══════════════════════════════════════════════════════════════════════╝
+Think about card UIs in layers:
 
-1. First output a short plain-language summary sentence BEFORE the tag.
-2. Do not emit a <hypercard:card:v2> block if you cannot produce valid YAML.
-3. Always provide non-empty name, title, artifact.id, card.id, card.code.
-4. card.code should handle missing/undefined data gracefully with defaults.
-5. Use only YAML inside the tag (no JSON, no raw JS outside card.code).
-6. The card.code |- YAML block preserves newlines. Indent code by 4 spaces.
-7. After the closing ``` fence, you MUST emit the exact closing tag </hypercard:card:v2>.
-8. A response that opens <hypercard:card:v2> but does not close </hypercard:card:v2> is invalid.
+- `panel` is the whole card body.
+- `column` and `row` arrange content.
+- `text` and `badge` explain what the user is seeing.
+- `button` and `input` let the user act or type.
+- `table`, `dropdown`, `selectableTable`, and `gridBoard` present structured data or choices.
+
+Quick widget choice guide:
+
+- Use `text` for readable copy, labels, headings, and empty states.
+- Use `badge` for short status chips like `Open`, `3 selected`, or `Healthy`.
+- Use `table` when data is read-only.
+- Use `selectableTable` when the user should pick rows, search rows, or click rows.
+- Use `dropdown` when the user must choose one option from a short list.
+- Use `gridBoard` when the choice is spatial or cell-based rather than row-based.
+
+### Layout
+
+- `ui.panel(children)`
+  - Root container.
+  - Shape: `{ kind: "panel", children: [...] }`
+
+`ui.panel` is the outer shell of the card. Most cards should have exactly one
+panel at the root, with everything else nested inside it.
+
+- `ui.column(children)`
+  - Vertical container.
+  - Shape: `{ kind: "column", children: [...] }`
+
+`ui.column` stacks things from top to bottom. Use it for most cards: title,
+description, filters, summary badges, then a table or other widget below.
+
+- `ui.row(children)`
+  - Horizontal container.
+  - Shape: `{ kind: "row", children: [...] }`
+
+`ui.row` places a small number of items side by side. Use it for button bars,
+label-plus-input lines, or small control groups. If a row starts feeling crowded,
+switch to a column.
+
+Example:
+
+```js
+ui.panel([
+  ui.row([
+    ui.text("Left"),
+    ui.badge("Right")
+  ])
+])
+```
+
+### Basic Display
+
+- `ui.text(text)`
+  - Shape: `{ kind: "text", text: "..." }`
+
+`ui.text` is the default readable content widget. Use it for titles, labels,
+descriptions, warnings, helper text, and empty-state messages.
+
+- `ui.badge(text)`
+  - Shape: `{ kind: "badge", text: "..." }`
+
+`ui.badge` is for short, glanceable state. Good badge content is compact:
+status, counts, selected item names, priority, or mode. If the content is a full
+sentence, use `ui.text` instead.
+
+Example:
+
+```js
+ui.panel([
+  ui.text("Server status"),
+  ui.badge("Healthy")
+])
+```
+
+### Button
+
+- `ui.button(label, props?)`
+  - Required: `label`
+  - Optional: `variant`, `onClick`
+  - Shape:
+
+`ui.button` represents an intentional user action: save, close, refresh,
+navigate, submit, clear, choose, open details. If the user is not meant to click
+it, it should not be a button.
+
+```js
+ui.button("Run", {
+  variant: "primary",
+  onClick: { handler: "runJob", args: { jobId: "daily-sync" } }
+})
+```
+
+Safe `variant` values:
+
+- `"default"`
+- `"primary"`
+- `"danger"`
+
+If unsure, omit `variant`.
+
+Use variants to hint importance:
+
+- `default`: neutral action
+- `primary`: main action on the card
+- `danger`: destructive or clearing action
+
+### Input
+
+- `ui.input(value, props?)`
+  - Required: `value` string
+  - Optional: `placeholder`, `onChange`
+  - Shape:
+
+`ui.input` is a single-line text field. Use it for search, filter text,
+editable names, quantities, ids, notes, or other short values. Keep its current
+value in `cardState` unless the task clearly calls for session-shared state.
+
+```js
+ui.input(query, {
+  placeholder: "Search",
+  onChange: { handler: "setQuery" }
+})
+```
+
+### Table
+
+- `ui.table(rows, { headers })`
+  - `headers`: string array
+  - `rows`: array of row arrays
+
+`ui.table` is the simplest data widget. Use it when the user mainly needs to
+read values. It does not support selection or search callbacks. If the user needs
+to pick rows or interact with rows, use `ui.selectableTable` instead.
+
+```js
+ui.table(
+  [
+    ["A-100", "Widget", "12"],
+    ["A-101", "Cable", "4"]
+  ],
+  { headers: ["SKU", "Name", "Qty"] }
+)
+```
+
+### Dropdown
+
+- `ui.dropdown(options, props)`
+  - `options`: string array
+  - `props.selected`: zero-based selected index
+  - Optional: `onSelect`, `width`
+
+`ui.dropdown` is a compact one-of-many chooser. Use it for things like status,
+priority, theme, category, sort mode, or view mode, especially when the option
+set is short and the user should choose exactly one value.
+
+```js
+ui.dropdown(["Low", "Medium", "High"], {
+  selected: 1,
+  onSelect: { handler: "setPriority" },
+  width: 180
+})
+```
+
+### Selectable Table
+
+- `ui.selectableTable(rows, props)`
+  - `headers`: string array
+  - `rows`: array of row arrays
+  - Optional:
+    - `selectedRowKeys: string[]`
+    - `mode: "single" | "multiple"`
+    - `rowKeyIndex: number`
+    - `searchable: boolean`
+    - `searchText: string`
+    - `searchPlaceholder: string`
+    - `emptyMessage: string`
+    - `onSelectionChange`
+    - `onSearchChange`
+    - `onRowClick`
+
+`ui.selectableTable` is the richer data-grid widget. Use it when the user should
+select records, inspect row sets, search within a list, or click through from a
+row into a detail flow. This is the right choice for "pick items", "select tasks",
+"choose contacts", or "browse matching rows".
+
+```js
+ui.selectableTable(
+  [
+    ["A-100", "Widget", "12"],
+    ["A-101", "Cable", "4"]
+  ],
+  {
+    headers: ["SKU", "Name", "Qty"],
+    selectedRowKeys: ["A-100"],
+    mode: "multiple",
+    rowKeyIndex: 0,
+    searchable: true,
+    searchText: "",
+    onSelectionChange: { handler: "setSelection" },
+    onSearchChange: { handler: "setSearch" },
+    onRowClick: { handler: "openRow" }
+  }
+)
+```
+
+### Grid Board
+
+- `ui.gridBoard(props)`
+  - Required: `rows`, `cols`
+  - Optional:
+    - `cells`
+    - `selectedIndex` (`number` or `null`)
+    - `cellSize: "small" | "medium" | "large"`
+    - `disabled`
+    - `onSelect`
+
+`ui.gridBoard` is a spatial chooser made of cells. Use it when position matters:
+seat maps, board coordinates, bin locations, slot pickers, calendar-like grids,
+or small dashboards where the user clicks a cell rather than a row.
+
+Cell shape:
+
+```js
+{
+  value: "A1",
+  label: "A1",
+  color: "#d9f99d",
+  disabled: false,
+  style: "solid"
+}
+```
+
+Grid example:
+
+```js
+ui.gridBoard({
+  rows: 2,
+  cols: 2,
+  selectedIndex: 0,
+  cellSize: "small",
+  cells: [
+    { label: "A1" },
+    { label: "A2" },
+    { label: "B1" },
+    { label: "B2", disabled: true }
+  ],
+  onSelect: { handler: "pickCell" }
+})
+```
+
+Treat `gridBoard` as a grid of interactive tiles. Each cell can carry short
+visual metadata like a label, value, color, or disabled state.
+
+## Common UI Patterns
+
+Use simple compositions instead of trying to build a very dense card.
+
+- Summary card
+  - Usually `panel` -> `text` -> a few `badge`s -> `table`
+  - Good for reports, health summaries, counts, and quick overviews.
+
+- Filter/search card
+  - Usually `panel` -> `row` or `column` containing `input`, `dropdown`, and maybe a `button`
+  - Good for narrowing a list or setting one active filter.
+
+- Record picker card
+  - Usually `panel` -> explanation `text` -> `selectableTable` -> action `button`s
+  - Good when the user needs to choose one or more rows.
+
+- Spatial picker card
+  - Usually `panel` -> explanation `text` -> `gridBoard` -> `badge`
+  - Good when the user chooses by position rather than by record row.
+
+For smaller models, prefer one main interactive widget per card instead of many
+competing widgets on the same screen.
+
+## Event Ref Shape
+
+Every event hook uses this shape:
+
+```js
+{ handler: "handlerName", args: { optional: "static values" } }
+```
+
+The `handler` string must be non-empty.
+
+## Event Payloads
+
+Handlers receive any static `args` plus widget event payloads.
+
+- `button.onClick`
+  - No extra event payload. The handler receives only `args`.
+
+- `input.onChange`
+  - Adds `{ value }`
+
+- `dropdown.onSelect`
+  - Adds `{ index, value }`
+
+- `selectableTable.onSelectionChange`
+  - Adds `{ selectedRowKeys }`
+
+- `selectableTable.onSearchChange`
+  - Adds `{ value }`
+
+- `selectableTable.onRowClick`
+  - Adds `{ rowIndex, rowKey, rowValues }`
+
+- `gridBoard.onSelect`
+  - Adds `{ row, col, cellIndex }`
+
+If both static `args` and event payload exist, they are merged into one object.
+
+## Render Context
+
+`render({ cardState, sessionState, globalState })`
+
+- `cardState`
+  - Per-card mutable state.
+  - Start here for local UI state like filters, selected rows, drafts, toggles.
+
+- `sessionState`
+  - Per-session shared state across cards.
+
+- `globalState`
+  - Read-only host state snapshot.
+  - App-specific data usually lives under `globalState.domains`.
+  - Navigation or runtime metadata may also exist.
+
+Do not assume specific domain names unless the user or conversation context
+gives them to you.
+
+## Handler Context
+
+Each handler receives `(ctx, args)`.
+
+Available APIs:
+
+- `ctx.cardState`
+- `ctx.sessionState`
+- `ctx.globalState`
+- `ctx.dispatchCardAction(actionType, payload)`
+- `ctx.dispatchSessionAction(actionType, payload)`
+- `ctx.dispatchDomainAction(domain, actionType, payload)`
+- `ctx.dispatchSystemCommand(command, payload)`
+
+Conservative local state actions:
+
+- `ctx.dispatchCardAction("patch", { query: "abc" })`
+- `ctx.dispatchCardAction("set", { path: "form.title", value: "Hello" })`
+- `ctx.dispatchCardAction("reset")`
+
+- `ctx.dispatchSessionAction("patch", { selectedView: "detail" })`
+- `ctx.dispatchSessionAction("set", { path: "filters.status", value: "open" })`
+- `ctx.dispatchSessionAction("reset")`
+
+Domain actions are app-defined. Use them only when the domain and action name
+are clearly available from the task context.
+
+System commands:
+
+- `ctx.dispatchSystemCommand("nav.go", { cardId: "someCard", param: "optional" })`
+- `ctx.dispatchSystemCommand("nav.back")`
+- `ctx.dispatchSystemCommand("notify", { message: "Done" })`
+- `ctx.dispatchSystemCommand("window.close")`
+
+## Tiny Examples
+
+### 1. Minimal read-only card
+
+```js
+({ ui }) => ({
+  render() {
+    return ui.panel([
+      ui.text("Hello from a runtime card")
+    ]);
+  }
+})
+```
+
+### 2. Small local-state input card
+
+```js
+({ ui }) => ({
+  render({ cardState }) {
+    const draft = String(cardState?.draft ?? "");
+    return ui.panel([
+      ui.text("Quick Note"),
+      ui.input(draft, {
+        placeholder: "Type here",
+        onChange: { handler: "setDraft" }
+      }),
+      ui.badge(draft ? "Typing" : "Empty")
+    ]);
+  },
+  handlers: {
+    setDraft(ctx, args) {
+      ctx.dispatchCardAction("patch", { draft: String(args?.value ?? "") });
+    }
+  }
+})
+```
+
+### 3. Small dropdown chooser
+
+```js
+({ ui }) => ({
+  render({ cardState }) {
+    const selected = Number(cardState?.priorityIndex ?? 0);
+    return ui.panel([
+      ui.text("Priority"),
+      ui.dropdown(["Low", "Medium", "High"], {
+        selected,
+        onSelect: { handler: "setPriority" }
+      }),
+      ui.badge("Selected index: " + String(selected))
+    ]);
+  },
+  handlers: {
+    setPriority(ctx, args) {
+      ctx.dispatchCardAction("patch", {
+        priorityIndex: Number(args?.index ?? 0),
+        priorityLabel: String(args?.value ?? "")
+      });
+    }
+  }
+})
+```
+
+### 4. Small selectable table
+
+```js
+({ ui }) => ({
+  render({ cardState }) {
+    const selectedRowKeys = Array.isArray(cardState?.selectedRowKeys)
+      ? cardState.selectedRowKeys
+      : [];
+    return ui.panel([
+      ui.selectableTable(
+        [
+          ["A-100", "Widget", "12"],
+          ["A-101", "Cable", "4"]
+        ],
+        {
+          headers: ["SKU", "Name", "Qty"],
+          selectedRowKeys,
+          mode: "multiple",
+          rowKeyIndex: 0,
+          onSelectionChange: { handler: "setSelection" }
+        }
+      ),
+      ui.badge("Selected: " + selectedRowKeys.join(", "))
+    ]);
+  },
+  handlers: {
+    setSelection(ctx, args) {
+      ctx.dispatchCardAction("patch", {
+        selectedRowKeys: Array.isArray(args?.selectedRowKeys) ? args.selectedRowKeys : []
+      });
+    }
+  }
+})
+```
+
+### 5. Small grid board
+
+```js
+({ ui }) => ({
+  render({ cardState }) {
+    const selectedIndex = cardState?.selectedIndex ?? 0;
+    return ui.panel([
+      ui.gridBoard({
+        rows: 2,
+        cols: 2,
+        selectedIndex,
+        cellSize: "small",
+        cells: [
+          { label: "A1" },
+          { label: "A2" },
+          { label: "B1" },
+          { label: "B2" }
+        ],
+        onSelect: { handler: "pickCell" }
+      }),
+      ui.badge("Cell: " + String(selectedIndex))
+    ]);
+  },
+  handlers: {
+    pickCell(ctx, args) {
+      ctx.dispatchCardAction("patch", {
+        selectedIndex: Number(args?.cellIndex ?? 0)
+      });
+    }
+  }
+})
+```
+
+## Avoid These Mistakes
+
+- Do not emit unsupported node kinds.
+- Do not put `null`, `undefined`, or `false` directly inside `children`.
+- Do not use `import`, `export`, `require`, `eval`, `Function`, or `new Function`.
+- Do not access `window`, `document`, `fetch`, `XMLHttpRequest`, timers, or browser APIs.
+- Do not use `Promise`, async work, or background loops.
+- Do not mutate `globalState`.
+- Do not assume a domain shape that was not provided.
+- Do not return raw strings, numbers, arrays, or multiple roots from `render()`.
+- Do not leave the outer `<hypercard:card:v2>` tag unclosed.
+
+## Final Checklist
+
+Before finishing, verify all of the following:
+
+- You wrote one short sentence before the tag.
+- You emitted exactly one `<hypercard:card:v2>` block.
+- The YAML is valid.
+- `card.code` is a single JS expression.
+- `render()` returns one root `ui.panel([...])`.
+- Every widget is from the supported list above.
+- Every handler name referenced by an event ref exists in `handlers`.
+- The outer closing tag `</hypercard:card:v2>` is present.
