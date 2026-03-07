@@ -68,7 +68,8 @@ interface InventoryRootState {
   chatProfiles?: {
     availableProfiles?: Array<{ slug: string; display_name?: string; is_default?: boolean }>;
     selectedProfile?: string | null;
-    selectedByScope?: Record<string, { profile: string | null }>;
+    selectedRegistry?: string | null;
+    selectedByScope?: Record<string, { profile: string | null; registry?: string | null }>;
   };
 }
 
