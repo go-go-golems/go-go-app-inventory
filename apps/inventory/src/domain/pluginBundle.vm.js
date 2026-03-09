@@ -18,44 +18,48 @@ defineStackBundle(({ ui }) => {
     return '$' + toNumber(value, 0).toFixed(2);
   }
 
-  function domains(globalState) {
-    return asRecord(asRecord(globalState).domains);
+  function inventoryState(state) {
+    return asRecord(asRecord(state).inventory);
   }
 
-  function inventory(globalState) {
-    return asRecord(domains(globalState).inventory);
+  function salesState(state) {
+    return asRecord(asRecord(state).sales);
   }
 
-  function sales(globalState) {
-    return asRecord(domains(globalState).sales);
+  function filters(state) {
+    return asRecord(asRecord(state).filters);
   }
 
-  function selectItems(globalState) {
-    return asArray(inventory(globalState).items);
+  function draft(state) {
+    return asRecord(asRecord(state).draft);
   }
 
-  function selectSales(globalState) {
-    return asArray(sales(globalState).log);
+  function selectItems(state) {
+    return asArray(inventoryState(state).items);
   }
 
-  function navParam(globalState) {
-    const param = asRecord(globalState).nav && asRecord(globalState).nav.param;
+  function selectSales(state) {
+    return asArray(salesState(state).log);
+  }
+
+  function navParam(state) {
+    const param = asRecord(asRecord(state).nav).param;
     return typeof param === 'string' ? param : '';
   }
 
-  function threshold(sessionState) {
-    const value = toNumber(asRecord(sessionState).lowStockThreshold, 3);
+  function threshold(state) {
+    const value = toNumber(filters(state).lowStockThreshold, 3);
     return value > 0 ? value : 3;
   }
 
-  function findItem(globalState, sku) {
+  function findItem(state, sku) {
     const normalized = String(sku || '').toLowerCase();
-    return selectItems(globalState).find((item) => String(asRecord(item).sku || '').toLowerCase() === normalized) || null;
+    return selectItems(state).find((item) => String(asRecord(item).sku || '').toLowerCase() === normalized) || null;
   }
 
-  function reportRows(globalState, sessionState) {
-    const items = selectItems(globalState);
-    const low = threshold(sessionState);
+  function reportRows(state) {
+    const items = selectItems(state);
+    const low = threshold(state);
     const totalSkus = items.length;
     const totalUnits = items.reduce((sum, item) => sum + toNumber(asRecord(item).qty, 0), 0);
     const retailValue = items.reduce(
@@ -69,7 +73,7 @@ defineStackBundle(({ ui }) => {
     const lowStockCount = items.filter((item) => toNumber(asRecord(item).qty, 0) <= low).length;
     const outOfStockCount = items.filter((item) => toNumber(asRecord(item).qty, 0) <= 0).length;
     const potentialProfit = retailValue - costBasis;
-    const recentSalesTotal = selectSales(globalState).reduce((sum, sale) => sum + toNumber(asRecord(sale).total, 0), 0);
+    const recentSalesTotal = selectSales(state).reduce((sum, sale) => sum + toNumber(asRecord(sale).total, 0), 0);
 
     return [
       ['Total SKUs', String(totalSkus)],
@@ -148,15 +152,15 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          go({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('nav.go', { cardId: String(asRecord(args).cardId || 'home') });
+          go({ dispatch }, args) {
+            dispatch({ type: 'nav.go', payload: { cardId: String(asRecord(args).cardId || 'home') } });
           },
         },
       },
 
       browse: {
-        render({ globalState }) {
-          const items = selectItems(globalState);
+        render({ state }) {
+          const items = selectItems(state);
           const quickOpen = items.slice(0, 10).map((item) => {
             const row = asRecord(item);
             const sku = String(row.sku || '');
@@ -175,22 +179,25 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          go({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('nav.go', { cardId: String(asRecord(args).cardId || 'home') });
+          go({ dispatch }, args) {
+            dispatch({ type: 'nav.go', payload: { cardId: String(asRecord(args).cardId || 'home') } });
           },
-          open({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('nav.go', {
-              cardId: 'itemDetail',
-              param: String(asRecord(args).sku || ''),
+          open({ dispatch }, args) {
+            dispatch({
+              type: 'nav.go',
+              payload: {
+                cardId: 'itemDetail',
+                param: String(asRecord(args).sku || ''),
+              },
             });
           },
         },
       },
 
       lowStock: {
-        render({ globalState, sessionState }) {
-          const low = threshold(sessionState);
-          const items = selectItems(globalState).filter((item) => toNumber(asRecord(item).qty, 0) <= low);
+        render({ state }) {
+          const low = threshold(state);
+          const items = selectItems(state).filter((item) => toNumber(asRecord(item).qty, 0) <= low);
           const quickOpen = items.slice(0, 10).map((item) => {
             const row = asRecord(item);
             const sku = String(row.sku || '');
@@ -209,21 +216,24 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          open({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('nav.go', {
-              cardId: 'itemDetail',
-              param: String(asRecord(args).sku || ''),
+          open({ dispatch }, args) {
+            dispatch({
+              type: 'nav.go',
+              payload: {
+                cardId: 'itemDetail',
+                param: String(asRecord(args).sku || ''),
+              },
             });
           },
-          notify({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('notify', { message: String(asRecord(args).message || '') });
+          notify({ dispatch }, args) {
+            dispatch({ type: 'notify.show', payload: { message: String(asRecord(args).message || '') } });
           },
         },
       },
 
       salesToday: {
-        render({ globalState }) {
-          const entries = selectSales(globalState);
+        render({ state }) {
+          const entries = selectSales(state);
           const quickOpen = entries.slice(0, 10).map((sale) => {
             const row = asRecord(sale);
             const sku = String(row.sku || '');
@@ -241,19 +251,22 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          open({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('nav.go', {
-              cardId: 'itemDetail',
-              param: String(asRecord(args).sku || ''),
+          open({ dispatch }, args) {
+            dispatch({
+              type: 'nav.go',
+              payload: {
+                cardId: 'itemDetail',
+                param: String(asRecord(args).sku || ''),
+              },
             });
           },
         },
       },
 
       itemDetail: {
-        render({ cardState, globalState }) {
-          const sku = navParam(globalState);
-          const record = findItem(globalState, sku);
+        render({ state }) {
+          const sku = navParam(state);
+          const record = findItem(state, sku);
           if (!record) {
             return ui.panel([
               ui.text('Item not found: ' + String(sku || '(none)')),
@@ -261,11 +274,11 @@ defineStackBundle(({ ui }) => {
             ]);
           }
 
-          const edits = asRecord(asRecord(cardState).edits);
+          const edits = asRecord(draft(state).edits);
           const current = { ...asRecord(record), ...edits };
 
           return ui.panel([
-            ui.text('Item Detail: ' + String(current.sku || '')), 
+            ui.text('Item Detail: ' + String(current.sku || '')),
             ui.row([
               ui.text('Name:'),
               ui.input(String(current.name || ''), { onChange: { handler: 'change', args: { field: 'name' } } }),
@@ -304,10 +317,10 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          back({ dispatchSystemCommand }) {
-            dispatchSystemCommand('nav.back');
+          back({ dispatch }) {
+            dispatch({ type: 'nav.back' });
           },
-          change({ dispatchCardAction }, args) {
+          change({ dispatch }, args) {
             const field = String(asRecord(args).field || '');
             const value = asRecord(args).value;
             if (!field) return;
@@ -320,43 +333,53 @@ defineStackBundle(({ ui }) => {
               nextValue = parseTags(value);
             }
 
-            dispatchCardAction('set', {
-              path: 'edits.' + field,
-              value: nextValue,
+            dispatch({
+              type: 'draft.set',
+              payload: {
+                path: 'edits.' + field,
+                value: nextValue,
+              },
             });
           },
-          delta({ dispatchDomainAction, globalState }, args) {
-            const sku = navParam(globalState);
+          delta({ dispatch, state }, args) {
+            const sku = navParam(state);
             if (!sku) return;
-            dispatchDomainAction('inventory', 'updateQty', {
-              sku,
-              delta: toNumber(asRecord(args).delta, 0),
+            dispatch({
+              type: 'inventory/updateQty',
+              payload: {
+                sku,
+                delta: toNumber(asRecord(args).delta, 0),
+              },
             });
           },
-          save({ dispatchCardAction, dispatchDomainAction, dispatchSystemCommand, cardState, globalState }) {
-            const sku = navParam(globalState);
+          save({ dispatch, state }) {
+            const sku = navParam(state);
             if (!sku) return;
-            dispatchDomainAction('inventory', 'saveItem', {
-              sku,
-              edits: asRecord(asRecord(cardState).edits),
+            dispatch({
+              type: 'inventory/saveItem',
+              payload: {
+                sku,
+                edits: asRecord(draft(state).edits),
+              },
             });
-            dispatchCardAction('patch', { edits: {} });
-            dispatchSystemCommand('notify', { message: 'Saved ' + sku });
+            dispatch({ type: 'draft.patch', payload: { edits: {} } });
+            dispatch({ type: 'notify.show', payload: { message: 'Saved ' + sku } });
           },
-          remove({ dispatchDomainAction, dispatchSystemCommand, globalState }) {
-            const sku = navParam(globalState);
+          remove({ dispatch, state }) {
+            const sku = navParam(state);
             if (!sku) return;
-            dispatchDomainAction('inventory', 'deleteItem', { sku });
-            dispatchSystemCommand('notify', { message: 'Deleted ' + sku });
-            dispatchSystemCommand('nav.back');
+            dispatch({ type: 'inventory/deleteItem', payload: { sku } });
+            dispatch({ type: 'notify.show', payload: { message: 'Deleted ' + sku } });
+            dispatch({ type: 'nav.back' });
           },
         },
       },
 
       newItem: {
-        render({ cardState }) {
-          const form = asRecord(asRecord(cardState).form);
-          const submitResult = String(asRecord(cardState).submitResult || '');
+        render({ state }) {
+          const draftState = draft(state);
+          const form = asRecord(draftState.form);
+          const submitResult = String(draftState.submitResult || '');
           return ui.panel([
             ui.text('Create New Item'),
             ui.row([
@@ -391,56 +414,69 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          change({ dispatchCardAction }, args) {
+          change({ dispatch }, args) {
             const field = String(asRecord(args).field || '');
             if (!field) return;
             let value = asRecord(args).value;
             if (field === 'price' || field === 'cost' || field === 'qty') {
               value = toNumber(value, 0);
             }
-            dispatchCardAction('set', {
-              path: 'form.' + field,
-              value,
+            dispatch({
+              type: 'draft.set',
+              payload: {
+                path: 'form.' + field,
+                value,
+              },
             });
           },
-          submit({ dispatchCardAction, dispatchDomainAction, dispatchSystemCommand, cardState }) {
-            const form = asRecord(asRecord(cardState).form);
+          submit({ dispatch, state }) {
+            const form = asRecord(draft(state).form);
             const sku = String(form.sku || '').trim();
             const name = String(form.name || '').trim();
             if (!sku || !name) {
-              dispatchCardAction('set', {
-                path: 'submitResult',
-                value: '❌ SKU and Name are required',
+              dispatch({
+                type: 'draft.set',
+                payload: {
+                  path: 'submitResult',
+                  value: '❌ SKU and Name are required',
+                },
               });
               return;
             }
 
-            dispatchDomainAction('inventory', 'createItem', {
-              sku,
-              name,
-              category: String(form.category || 'Accessories'),
-              price: toNumber(form.price, 0),
-              cost: toNumber(form.cost, 0),
-              qty: toNumber(form.qty, 0),
-              tags: [],
+            dispatch({
+              type: 'inventory/createItem',
+              payload: {
+                sku,
+                name,
+                category: String(form.category || 'Accessories'),
+                price: toNumber(form.price, 0),
+                cost: toNumber(form.cost, 0),
+                qty: toNumber(form.qty, 0),
+                tags: [],
+              },
             });
 
-            dispatchCardAction('patch', {
-              form: { sku: '', name: '', category: 'Accessories', price: 0, cost: 0, qty: 0 },
-              submitResult: '✅ Created ' + sku,
+            dispatch({
+              type: 'draft.patch',
+              payload: {
+                form: { sku: '', name: '', category: 'Accessories', price: 0, cost: 0, qty: 0 },
+                submitResult: '✅ Created ' + sku,
+              },
             });
-            dispatchSystemCommand('notify', { message: 'Created ' + sku });
+            dispatch({ type: 'notify.show', payload: { message: 'Created ' + sku } });
           },
-          goHome({ dispatchSystemCommand }) {
-            dispatchSystemCommand('nav.go', { cardId: 'home' });
+          goHome({ dispatch }) {
+            dispatch({ type: 'nav.go', payload: { cardId: 'home' } });
           },
         },
       },
 
       receive: {
-        render({ cardState }) {
-          const form = asRecord(asRecord(cardState).form);
-          const submitResult = String(asRecord(cardState).submitResult || '');
+        render({ state }) {
+          const draftState = draft(state);
+          const form = asRecord(draftState.form);
+          const submitResult = String(draftState.submitResult || '');
           return ui.panel([
             ui.text('Receive Shipment'),
             ui.row([
@@ -460,44 +496,54 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          change({ dispatchCardAction }, args) {
+          change({ dispatch }, args) {
             const field = String(asRecord(args).field || '');
             if (!field) return;
             let value = asRecord(args).value;
             if (field === 'qty') {
               value = toNumber(value, 0);
             }
-            dispatchCardAction('set', {
-              path: 'form.' + field,
-              value,
+            dispatch({
+              type: 'draft.set',
+              payload: {
+                path: 'form.' + field,
+                value,
+              },
             });
           },
-          submit({ dispatchCardAction, dispatchDomainAction, dispatchSystemCommand, cardState }) {
-            const form = asRecord(asRecord(cardState).form);
+          submit({ dispatch, state }) {
+            const form = asRecord(draft(state).form);
             const sku = String(form.sku || '').trim();
             const qty = toNumber(form.qty, 0);
             if (!sku || qty <= 0) {
-              dispatchCardAction('set', {
-                path: 'submitResult',
-                value: '❌ SKU and qty are required',
+              dispatch({
+                type: 'draft.set',
+                payload: {
+                  path: 'submitResult',
+                  value: '❌ SKU and qty are required',
+                },
               });
               return;
             }
 
-            dispatchDomainAction('inventory', 'receiveStock', { sku, qty });
-            dispatchCardAction('patch', {
-              form: { sku: '', qty: 1, note: '' },
-              submitResult: '✅ Received +' + String(qty) + ' for ' + sku,
+            dispatch({ type: 'inventory/receiveStock', payload: { sku, qty } });
+            dispatch({
+              type: 'draft.patch',
+              payload: {
+                form: { sku: '', qty: 1, note: '' },
+                submitResult: '✅ Received +' + String(qty) + ' for ' + sku,
+              },
             });
-            dispatchSystemCommand('notify', { message: 'Received stock for ' + sku });
+            dispatch({ type: 'notify.show', payload: { message: 'Received stock for ' + sku } });
           },
         },
       },
 
       priceCheck: {
-        render({ cardState }) {
-          const form = asRecord(asRecord(cardState).form);
-          const submitResult = String(asRecord(cardState).submitResult || '');
+        render({ state }) {
+          const draftState = draft(state);
+          const form = asRecord(draftState.form);
+          const submitResult = String(draftState.submitResult || '');
           return ui.panel([
             ui.text('Price Checker'),
             ui.row([
@@ -509,42 +555,51 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          change({ dispatchCardAction }, args) {
-            dispatchCardAction('set', {
-              path: 'form.sku',
-              value: String(asRecord(args).value || ''),
+          change({ dispatch }, args) {
+            dispatch({
+              type: 'draft.set',
+              payload: {
+                path: 'form.sku',
+                value: String(asRecord(args).value || ''),
+              },
             });
           },
-          submit({ dispatchCardAction, cardState, globalState }) {
-            const sku = String(asRecord(asRecord(cardState).form).sku || '').trim();
-            const item = findItem(globalState, sku);
+          submit({ dispatch, state }) {
+            const sku = String(asRecord(draft(state).form).sku || '').trim();
+            const item = findItem(state, sku);
             if (!item) {
-              dispatchCardAction('set', {
-                path: 'submitResult',
-                value: '❌ SKU "' + sku + '" not found',
+              dispatch({
+                type: 'draft.set',
+                payload: {
+                  path: 'submitResult',
+                  value: '❌ SKU "' + sku + '" not found',
+                },
               });
               return;
             }
-            dispatchCardAction('set', {
-              path: 'submitResult',
-              value:
-                '✅ ' +
-                String(asRecord(item).name || '') +
-                ' — ' +
-                toMoney(asRecord(item).price) +
-                ' (' +
-                String(toNumber(asRecord(item).qty, 0)) +
-                ' in stock)',
+            dispatch({
+              type: 'draft.set',
+              payload: {
+                path: 'submitResult',
+                value:
+                  '✅ ' +
+                  String(asRecord(item).name || '') +
+                  ' — ' +
+                  toMoney(asRecord(item).price) +
+                  ' (' +
+                  String(toNumber(asRecord(item).qty, 0)) +
+                  ' in stock)',
+              },
             });
           },
         },
       },
 
       report: {
-        render({ globalState, sessionState }) {
+        render({ state }) {
           return ui.panel([
             ui.text('Inventory Report'),
-            ui.table(reportRows(globalState, sessionState), { headers: ['Metric', 'Value'] }),
+            ui.table(reportRows(state), { headers: ['Metric', 'Value'] }),
             ui.row([
               ui.button('🖨 Print', { onClick: { handler: 'notify', args: { message: 'Report sent to printer (mock)' } } }),
               ui.button('📧 Email', { onClick: { handler: 'notify', args: { message: 'Report emailed (mock)' } } }),
@@ -552,12 +607,11 @@ defineStackBundle(({ ui }) => {
           ]);
         },
         handlers: {
-          notify({ dispatchSystemCommand }, args) {
-            dispatchSystemCommand('notify', { message: String(asRecord(args).message || '') });
+          notify({ dispatch }, args) {
+            dispatch({ type: 'notify.show', payload: { message: String(asRecord(args).message || '') } });
           },
         },
       },
-
     },
   };
 });

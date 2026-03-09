@@ -18,42 +18,46 @@ interface PluginUiFactory {
   table(rows?: unknown[], props?: Record<string, unknown>): PluginUiNode;
 }
 
-interface InventoryPluginGlobalState {
-  domains?: {
-    inventory?: {
-      items?: Item[];
-      [key: string]: unknown;
-    };
-    sales?: {
-      log?: SaleEntry[];
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
-  nav?: {
-    cardId?: string;
-    param?: unknown;
-    [key: string]: unknown;
-  };
+interface InventoryRuntimeState {
   self?: Record<string, unknown>;
-  system?: Record<string, unknown>;
+  nav?: {
+    current?: string;
+    param?: unknown;
+    depth?: number;
+    canBack?: boolean;
+    [key: string]: unknown;
+  };
+  ui?: {
+    focusedWindowId?: string | null;
+    runtimeStatus?: string;
+    [key: string]: unknown;
+  };
+  filters?: Record<string, unknown>;
+  draft?: Record<string, unknown>;
+  inventory?: {
+    items?: Item[];
+    selectedSku?: string;
+    [key: string]: unknown;
+  };
+  sales?: {
+    log?: SaleEntry[];
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
-type PluginCardState = Record<string, unknown>;
-type PluginSessionState = Record<string, unknown>;
+interface RuntimeAction {
+  type: string;
+  payload?: unknown;
+  meta?: Record<string, unknown>;
+}
 
 interface PluginRenderContext {
-  cardState: PluginCardState;
-  sessionState: PluginSessionState;
-  globalState: InventoryPluginGlobalState;
+  state: InventoryRuntimeState;
 }
 
 interface PluginHandlerContext extends PluginRenderContext {
-  dispatchCardAction(actionType: string, payload?: unknown): void;
-  dispatchSessionAction(actionType: string, payload?: unknown): void;
-  dispatchDomainAction(domain: string, actionType: string, payload?: unknown): void;
-  dispatchSystemCommand(command: string, payload?: unknown): void;
+  dispatch(action: RuntimeAction): void;
 }
 
 interface PluginCardDef {
@@ -65,8 +69,8 @@ interface PluginBundle {
   id: string;
   title: string;
   description?: string;
-  initialSessionState?: PluginSessionState;
-  initialCardState?: Record<string, PluginCardState>;
+  initialSessionState?: Record<string, unknown>;
+  initialCardState?: Record<string, Record<string, unknown>>;
   cards: Record<string, PluginCardDef>;
 }
 

@@ -51,15 +51,15 @@ Unless you have a very specific reason not to, always use this pattern:
 
 ```js
 ({ ui }) => ({
-  render({ cardState, sessionState, globalState }) {
+  render({ state }) {
     return ui.panel([
       ui.text("Title"),
       ui.button("Close", { onClick: { handler: "close" } })
     ]);
   },
   handlers: {
-    close(ctx) {
-      ctx.dispatchSystemCommand("window.close");
+    close({ dispatch }) {
+      dispatch({ type: "window.close" });
     }
   }
 })
@@ -239,7 +239,8 @@ Use variants to hint importance:
 
 `ui.input` is a single-line text field. Use it for search, filter text,
 editable names, quantities, ids, notes, or other short values. Keep its current
-value in `cardState` unless the task clearly calls for session-shared state.
+value in `state.draft` unless the task clearly calls for session-shared state in
+`state.filters`.
 
 ```js
 ui.input(query, {
@@ -439,19 +440,15 @@ If both static `args` and event payload exist, they are merged into one object.
 
 ## Render Context
 
-`render({ cardState, sessionState, globalState })`
+`render({ state })`
 
-- `cardState`
-  - Per-card mutable state.
-  - Start here for local UI state like filters, selected rows, drafts, toggles.
-
-- `sessionState`
-  - Per-session shared state across cards.
-
-- `globalState`
-  - Read-only host state snapshot.
-  - App-specific data usually lives under `globalState.domains`.
-  - Navigation or runtime metadata may also exist.
+- `state`
+  - The single VM-facing state object projected by the host.
+  - Read the fields you need for the current UI: for example `state.draft`,
+    `state.filters`, `state.inventory`, `state.sales`, `state.nav`, or
+    `state.ui`.
+  - Do not assume every card gets the same shape. Use only fields justified by
+    the task context or examples already in play.
 
 Do not assume specific domain names unless the user or conversation context
 gives them to you.
@@ -462,33 +459,28 @@ Each handler receives `(ctx, args)`.
 
 Available APIs:
 
-- `ctx.cardState`
-- `ctx.sessionState`
-- `ctx.globalState`
-- `ctx.dispatchCardAction(actionType, payload)`
-- `ctx.dispatchSessionAction(actionType, payload)`
-- `ctx.dispatchDomainAction(domain, actionType, payload)`
-- `ctx.dispatchSystemCommand(command, payload)`
+- `ctx.state`
+- `ctx.dispatch({ type, payload, meta? })`
 
 Conservative local state actions:
 
-- `ctx.dispatchCardAction("patch", { query: "abc" })`
-- `ctx.dispatchCardAction("set", { path: "form.title", value: "Hello" })`
-- `ctx.dispatchCardAction("reset")`
+- `ctx.dispatch({ type: "draft.patch", payload: { query: "abc" } })`
+- `ctx.dispatch({ type: "draft.set", payload: { path: "form.title", value: "Hello" } })`
+- `ctx.dispatch({ type: "draft.reset" })`
 
-- `ctx.dispatchSessionAction("patch", { selectedView: "detail" })`
-- `ctx.dispatchSessionAction("set", { path: "filters.status", value: "open" })`
-- `ctx.dispatchSessionAction("reset")`
+- `ctx.dispatch({ type: "filters.patch", payload: { selectedView: "detail" } })`
+- `ctx.dispatch({ type: "filters.set", payload: { path: "status", value: "open" } })`
+- `ctx.dispatch({ type: "filters.reset" })`
 
-Domain actions are app-defined. Use them only when the domain and action name
-are clearly available from the task context.
+Domain actions are app-defined. Use them only when the reducer action type is
+clearly available from the task context.
 
-System commands:
+System actions:
 
-- `ctx.dispatchSystemCommand("nav.go", { cardId: "someCard", param: "optional" })`
-- `ctx.dispatchSystemCommand("nav.back")`
-- `ctx.dispatchSystemCommand("notify", { message: "Done" })`
-- `ctx.dispatchSystemCommand("window.close")`
+- `ctx.dispatch({ type: "nav.go", payload: { cardId: "someCard", param: "optional" } })`
+- `ctx.dispatch({ type: "nav.back" })`
+- `ctx.dispatch({ type: "notify.show", payload: { message: "Done" } })`
+- `ctx.dispatch({ type: "window.close" })`
 
 ## Tiny Examples
 
@@ -508,8 +500,8 @@ System commands:
 
 ```js
 ({ ui }) => ({
-  render({ cardState }) {
-    const draft = String(cardState?.draft ?? "");
+  render({ state }) {
+    const draft = String(state?.draft?.draft ?? "");
     return ui.panel([
       ui.text("Quick Note"),
       ui.input(draft, {
@@ -520,8 +512,8 @@ System commands:
     ]);
   },
   handlers: {
-    setDraft(ctx, args) {
-      ctx.dispatchCardAction("patch", { draft: String(args?.value ?? "") });
+    setDraft({ dispatch }, args) {
+      dispatch({ type: "draft.patch", payload: { draft: String(args?.value ?? "") } });
     }
   }
 })
@@ -531,8 +523,8 @@ System commands:
 
 ```js
 ({ ui }) => ({
-  render({ cardState }) {
-    const selected = Number(cardState?.priorityIndex ?? 0);
+  render({ state }) {
+    const selected = Number(state?.draft?.priorityIndex ?? 0);
     return ui.panel([
       ui.text("Priority"),
       ui.dropdown(["Low", "Medium", "High"], {
@@ -543,10 +535,13 @@ System commands:
     ]);
   },
   handlers: {
-    setPriority(ctx, args) {
-      ctx.dispatchCardAction("patch", {
-        priorityIndex: Number(args?.index ?? 0),
-        priorityLabel: String(args?.value ?? "")
+    setPriority({ dispatch }, args) {
+      dispatch({
+        type: "draft.patch",
+        payload: {
+          priorityIndex: Number(args?.index ?? 0),
+          priorityLabel: String(args?.value ?? "")
+        }
       });
     }
   }
@@ -557,9 +552,9 @@ System commands:
 
 ```js
 ({ ui }) => ({
-  render({ cardState }) {
-    const selectedRowKeys = Array.isArray(cardState?.selectedRowKeys)
-      ? cardState.selectedRowKeys
+  render({ state }) {
+    const selectedRowKeys = Array.isArray(state?.draft?.selectedRowKeys)
+      ? state.draft.selectedRowKeys
       : [];
     return ui.panel([
       ui.selectableTable(
@@ -579,9 +574,12 @@ System commands:
     ]);
   },
   handlers: {
-    setSelection(ctx, args) {
-      ctx.dispatchCardAction("patch", {
-        selectedRowKeys: Array.isArray(args?.selectedRowKeys) ? args.selectedRowKeys : []
+    setSelection({ dispatch }, args) {
+      dispatch({
+        type: "draft.patch",
+        payload: {
+          selectedRowKeys: Array.isArray(args?.selectedRowKeys) ? args.selectedRowKeys : []
+        }
       });
     }
   }
@@ -592,8 +590,8 @@ System commands:
 
 ```js
 ({ ui }) => ({
-  render({ cardState }) {
-    const selectedIndex = cardState?.selectedIndex ?? 0;
+  render({ state }) {
+    const selectedIndex = state?.draft?.selectedIndex ?? 0;
     return ui.panel([
       ui.gridBoard({
         rows: 2,
@@ -612,9 +610,12 @@ System commands:
     ]);
   },
   handlers: {
-    pickCell(ctx, args) {
-      ctx.dispatchCardAction("patch", {
-        selectedIndex: Number(args?.cellIndex ?? 0)
+    pickCell({ dispatch }, args) {
+      dispatch({
+        type: "draft.patch",
+        payload: {
+          selectedIndex: Number(args?.cellIndex ?? 0)
+        }
       });
     }
   }
@@ -628,7 +629,7 @@ System commands:
 - Do not use `import`, `export`, `require`, `eval`, `Function`, or `new Function`.
 - Do not access `window`, `document`, `fetch`, `XMLHttpRequest`, timers, or browser APIs.
 - Do not use `Promise`, async work, or background loops.
-- Do not mutate `globalState`.
+- Do not mutate `state`.
 - Do not assume a domain shape that was not provided.
 - Do not return raw strings, numbers, arrays, or multiple roots from `render()`.
 - Do not leave the outer `<hypercard:card:v2>` tag unclosed.

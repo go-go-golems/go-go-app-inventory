@@ -41,7 +41,7 @@ export const STACK: CardStackDefinition = {
     bundleCode: INVENTORY_PLUGIN_BUNDLE,
     capabilities: {
       domain: ['inventory', 'sales'],
-      system: ['nav.go', 'nav.back', 'notify', 'window.close'],
+      system: ['nav.go', 'nav.back', 'notify.show', 'window.close'],
     },
   },
   cards: Object.fromEntries(INVENTORY_CARD_META.map((card) => [card.id, toPluginCard(card)])),
