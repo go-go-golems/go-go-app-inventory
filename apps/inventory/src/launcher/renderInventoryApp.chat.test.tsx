@@ -1,54 +1,19 @@
-// @vitest-environment jsdom
-import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { Provider } from 'react-redux';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  ChatConversationWindow,
   clearSemHandlers,
   ensureChatModulesRegistered,
   handleSem,
+  resetChatModulesRegistrationForTest,
+} from '@hypercard/chat-runtime';
+import { createAppStore } from '@hypercard/hypercard-runtime';
+import { inventoryReducer } from '../features/inventory/inventorySlice';
+import { salesReducer } from '../features/sales/salesSlice';
+import {
   chatProfilesReducer,
   chatSessionReducer,
   chatWindowReducer,
-  resetChatModulesRegistrationForTest,
   timelineReducer,
 } from '@hypercard/chat-runtime';
-import { HypercardCardRenderer, createAppStore } from '@hypercard/hypercard-runtime';
-import { inventoryReducer } from '../features/inventory/inventorySlice';
-import { salesReducer } from '../features/sales/salesSlice';
-
-vi.mock('@hypercard/engine/desktop-react', async () => {
-  const actual = await vi.importActual<object>('@hypercard/engine/desktop-react');
-  return {
-    ...actual,
-    useDesktopWindowId: () => undefined,
-    useOpenDesktopContextMenu: () => undefined,
-  };
-});
-
-vi.mock('@hypercard/chat-runtime', async () => {
-  const actual = await vi.importActual<object>('@hypercard/chat-runtime');
-  return {
-    ...actual,
-    useConversation: () => ({
-      send: vi.fn(async () => undefined),
-      connectionStatus: 'connected',
-      isStreaming: false,
-    }),
-    useProfiles: () => ({
-      profiles: [],
-      loading: false,
-      error: null,
-      refresh: vi.fn(async () => undefined),
-    }),
-    useSetProfile: () => vi.fn(async () => undefined),
-    useRegisterConversationContextActions: () => undefined,
-  };
-});
-
-const roots: Root[] = [];
-const containers: HTMLElement[] = [];
 
 const { createStore: createInventoryHostStore } = createAppStore({
   inventory: inventoryReducer,
@@ -59,38 +24,15 @@ const { createStore: createInventoryHostStore } = createAppStore({
   chatProfiles: chatProfilesReducer,
 });
 
-beforeAll(() => {
-  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-  if (typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.scrollIntoView !== 'function') {
-    HTMLElement.prototype.scrollIntoView = () => undefined;
-  }
-});
-
 beforeEach(() => {
   clearSemHandlers();
   resetChatModulesRegistrationForTest();
   ensureChatModulesRegistered();
 });
 
-afterEach(() => {
-  for (const root of roots.splice(0)) {
-    act(() => {
-      root.unmount();
-    });
-  }
-  for (const container of containers.splice(0)) {
-    container.remove();
-  }
-});
-
-describe('inventory chat card rendering', () => {
-  it('renders a hypercard.card.v2 row in ChatConversationWindow using the inventory host store', async () => {
+describe('inventory chat card projection', () => {
+  it('projects a hypercard.card.v2 artifact into the inventory host store', async () => {
     const store = createInventoryHostStore();
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    containers.push(container);
-    const root = createRoot(container);
-    roots.push(root);
 
     handleSem(
       {
@@ -130,23 +72,77 @@ describe('inventory chat card rendering', () => {
     );
     await Promise.resolve();
 
-    await act(async () => {
-      root.render(
-        <Provider store={store}>
-          <ChatConversationWindow
-            convId="conv-card"
-            basePrefix="/api/apps/inventory"
-            windowId="window:inventory:test-chat"
-            timelineRenderers={{
-              'hypercard.card.v2': HypercardCardRenderer,
-            }}
-          />
-        </Provider>,
-      );
-    });
+    const artifact = store.getState().hypercardArtifacts.byId['inventory-drilldown'];
+    expect(artifact?.title).toBe('Inventory Drilldown');
+    expect(artifact?.runtimeCardId).toBe('runtimeInventoryDrilldown');
+    expect(artifact?.packId).toBeUndefined();
+  });
 
-    expect(container.textContent).toContain('Card:');
-    expect(container.textContent).toContain('Inventory Drilldown');
-    expect(container.textContent).toContain('runtime=runtimeInventoryDrilldown');
+  it('projects runtime.pack metadata for kanban.v1 cards into the inventory host store', async () => {
+    const store = createInventoryHostStore();
+
+    handleSem(
+      {
+        sem: true,
+        event: {
+          type: 'timeline.upsert',
+          id: 'evt-kanban-card',
+          data: {
+            convId: 'conv-kanban-card',
+            version: '22',
+            entity: {
+              id: 'evt-kanban-card:result',
+              kind: 'hypercard.card.v2',
+              createdAtMs: '2200',
+              updatedAtMs: '2201',
+              props: {
+                title: 'Sprint Board',
+                result: {
+                  title: 'Sprint Board',
+                  data: {
+                    artifact: {
+                      id: 'sprint-board',
+                      data: { boardId: 'sprint-24' },
+                    },
+                    runtime: {
+                      pack: 'kanban.v1',
+                    },
+                    card: {
+                      id: 'sprintBoard',
+                      code: `({ widgets }) => ({
+                        render() {
+                          return widgets.kanban.board({
+                            columns: [
+                              { id: 'todo', title: 'To Do', icon: '📋' },
+                              { id: 'done', title: 'Done', icon: '✅' }
+                            ],
+                            tasks: [
+                              { id: 'task-1', col: 'todo', title: 'Wire runtime.pack', desc: '', tags: ['feature'], priority: 'high' },
+                              { id: 'task-2', col: 'done', title: 'Extract KanbanBoardView', desc: '', tags: ['feature'], priority: 'medium' }
+                            ],
+                            editingTask: null,
+                            filterTag: null,
+                            filterPriority: null,
+                            searchQuery: '',
+                            collapsedCols: {}
+                          });
+                        }
+                      })`,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      { convId: 'conv-kanban-card', dispatch: store.dispatch },
+    );
+    await Promise.resolve();
+
+    const artifact = store.getState().hypercardArtifacts.byId['sprint-board'];
+    expect(artifact?.title).toBe('Sprint Board');
+    expect(artifact?.runtimeCardId).toBe('sprintBoard');
+    expect(artifact?.packId).toBe('kanban.v1');
   });
 });

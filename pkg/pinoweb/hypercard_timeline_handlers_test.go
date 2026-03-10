@@ -146,6 +146,9 @@ func TestHypercardTimelineHandlers_CardUpdateProjectsStreamingCardResult(t *test
 					"id":   "artifact-card-1",
 					"data": map[string]any{"sku": "WA-100"},
 				},
+				"runtime": map[string]any{
+					"pack": "kanban.v1",
+				},
 				"card": map[string]any{
 					"id":   "runtime-low-stock",
 					"code": "({ ui }) => ({ render() { return ui.text(\"low stock\"); } })",
@@ -176,6 +179,9 @@ func TestHypercardTimelineHandlers_CardUpdateProjectsStreamingCardResult(t *test
 
 	dataBody, ok := resultBody["data"].(map[string]any)
 	require.True(t, ok)
+	runtimeBody, ok := dataBody["runtime"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "kanban.v1", runtimeBody["pack"])
 	cardBody, ok := dataBody["card"].(map[string]any)
 	require.True(t, ok)
 	require.Equal(t, "runtime-low-stock", cardBody["id"])

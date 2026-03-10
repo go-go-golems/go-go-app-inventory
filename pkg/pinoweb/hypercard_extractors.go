@@ -84,6 +84,9 @@ type inventoryRuntimeCardPayload struct {
 	Name     string                   `yaml:"name" json:"name"`
 	Title    string                   `yaml:"title" json:"title"`
 	Artifact inventoryArtifactPayload `yaml:"artifact" json:"artifact"`
+	Runtime  struct {
+		Pack string `yaml:"pack" json:"pack"`
+	} `yaml:"runtime" json:"runtime"`
 	Card     struct {
 		ID   string `yaml:"id" json:"id"`
 		Code string `yaml:"code" json:"code"`

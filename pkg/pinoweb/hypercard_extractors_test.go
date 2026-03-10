@@ -44,6 +44,16 @@ func firstRuntimeCardErrorEvent(list []events.Event) *HypercardCardErrorEvent {
 	return nil
 }
 
+func firstRuntimeCardReadyEvent(list []events.Event) *HypercardCardV2ReadyEvent {
+	for _, ev := range list {
+		cardReady, ok := ev.(*HypercardCardV2ReadyEvent)
+		if ok {
+			return cardReady
+		}
+	}
+	return nil
+}
+
 func TestWidgetExtractor_TitleGatedStartThenReady(t *testing.T) {
 	RegisterInventoryHypercardExtensions()
 
@@ -110,7 +120,7 @@ func TestRuntimeCardExtractor_ValidPayload(t *testing.T) {
 		"  id: lowStockDrilldown\n" +
 		"  code: |-\n" +
 		"    ({ ui }) => ({\n" +
-		"      render({ globalState }) {\n" +
+		"      render({ state }) {\n" +
 		"        return ui.panel([ui.text(\"Low Stock\")]);\n" +
 		"      }\n" +
 		"    })\n" +
@@ -123,6 +133,53 @@ func TestRuntimeCardExtractor_ValidPayload(t *testing.T) {
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardStart), 1)
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardCardV2))
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardError))
+}
+
+func TestRuntimeCardExtractor_PreservesRuntimePackMetadata(t *testing.T) {
+	RegisterInventoryHypercardExtensions()
+
+	col := &collectorSink{}
+	sink := structuredsink.NewFilteringSink(col, structuredsink.Options{
+		Malformed: structuredsink.MalformedErrorEvents,
+	}, &inventoryRuntimeCardExtractor{})
+
+	meta := events.EventMetadata{ID: uuid.New()}
+	full := "<hypercard:card:v2>\n```yaml\n" +
+		"name: Sprint Board\n" +
+		"title: Kanban Sprint Board\n" +
+		"artifact:\n" +
+		"  id: sprint-board\n" +
+		"  data:\n" +
+		"    boardId: sprint-24\n" +
+		"runtime:\n" +
+		"  pack: kanban.v1\n" +
+		"card:\n" +
+		"  id: sprintBoard\n" +
+		"  code: |-\n" +
+		"    ({ widgets }) => ({\n" +
+		"      render() {\n" +
+		"        return widgets.kanban.board({\n" +
+		"          columns: [{ id: \"todo\", title: \"To Do\", icon: \"📋\" }],\n" +
+		"          tasks: [{ id: \"task-1\", col: \"todo\", title: \"Ship runtime packs\", desc: \"\", tags: [], priority: \"high\" }],\n" +
+		"          searchQuery: \"\",\n" +
+		"          collapsedCols: {}\n" +
+		"        });\n" +
+		"      }\n" +
+		"    })\n" +
+		"```\n" +
+		"</hypercard:card:v2>"
+
+	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
+	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+
+	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardCardV2))
+	cardReady := firstRuntimeCardReadyEvent(col.events)
+	require.NotNil(t, cardReady)
+	data, ok := cardReady.Data.(map[string]any)
+	require.True(t, ok)
+	runtimeBody, ok := data["runtime"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "kanban.v1", runtimeBody["pack"])
 }
 
 func TestRuntimeCardExtractor_MissingCardCode(t *testing.T) {

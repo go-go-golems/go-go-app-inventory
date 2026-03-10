@@ -42,8 +42,105 @@ Field rules:
 - `title`: sentence-length window title.
 - `artifact.id`: stable kebab-case identifier.
 - `artifact.data`: optional metadata object.
+- `runtime.pack`: optional for the default `ui.card.v1` path, required for pack-specific cards such as Kanban.
 - `card.id`: lowerCamelCase JS identifier.
 - `card.code`: a single JavaScript expression.
+
+## Pack Selection
+
+There are currently two card authoring modes:
+
+- Default UI card:
+  - omit `runtime`
+  - use `({ ui }) => ({ ... })`
+  - return the normal `ui.*` tree
+- Kanban card:
+  - include `runtime.pack: kanban.v1`
+  - use `({ widgets }) => ({ ... })`
+  - return `widgets.kanban.board(...)`
+
+If the user is asking for a Kanban board, sprint board, backlog board, or task
+lane UI, you must use the Kanban pack. Do not fake a Kanban board with generic
+`ui.row` / `ui.column` trees.
+
+Kanban envelope example:
+
+````text
+<hypercard:card:v2>
+```yaml
+name: Sprint Board
+title: Sprint board for open implementation tasks
+artifact:
+  id: sprint-board
+  data:
+    boardId: sprint-24
+runtime:
+  pack: kanban.v1
+card:
+  id: sprintBoard
+  code: |-
+    ({ widgets }) => ({
+      render({ state }) {
+        const board = state.app_kanban ?? {};
+        return widgets.kanban.board({
+          columns: Array.isArray(board.columns) ? board.columns : [],
+          tasks: Array.isArray(board.tasks) ? board.tasks : [],
+          editingTask: board.editingTask ?? null,
+          filterTag: board.filterTag ?? null,
+          filterPriority: board.filterPriority ?? null,
+          searchQuery: typeof board.searchQuery === "string" ? board.searchQuery : "",
+          collapsedCols:
+            board.collapsedCols && typeof board.collapsedCols === "object" && !Array.isArray(board.collapsedCols)
+              ? board.collapsedCols
+              : {},
+          onOpenTaskEditor: { handler: "openTaskEditor" },
+          onCloseTaskEditor: { handler: "closeTaskEditor" },
+          onSaveTask: { handler: "saveTask" },
+          onDeleteTask: { handler: "deleteTask" },
+          onMoveTask: { handler: "moveTask" },
+          onSearchChange: { handler: "setSearchQuery" },
+          onSetFilterTag: { handler: "setFilterTag" },
+          onSetFilterPriority: { handler: "setFilterPriority" },
+          onClearFilters: { handler: "clearFilters" },
+          onToggleCollapsed: { handler: "toggleCollapsed" }
+        });
+      },
+      handlers: {
+        openTaskEditor({ dispatch }, args) {
+          dispatch({ type: "kanban/editing-task.set", payload: args?.task ?? null });
+        },
+        closeTaskEditor({ dispatch }) {
+          dispatch({ type: "kanban/editing-task.set", payload: null });
+        },
+        saveTask({ dispatch }, args) {
+          dispatch({ type: "kanban/task.upsert", payload: args?.task ?? null });
+        },
+        deleteTask({ dispatch }, args) {
+          dispatch({ type: "kanban/task.delete", payload: { id: String(args?.id ?? "") } });
+        },
+        moveTask({ dispatch }, args) {
+          dispatch({ type: "kanban/task.move", payload: args });
+        },
+        setSearchQuery({ dispatch }, args) {
+          dispatch({ type: "kanban/search.set", payload: { value: String(args?.value ?? "") } });
+        },
+        setFilterTag({ dispatch }, args) {
+          dispatch({ type: "kanban/filter-tag.set", payload: { tag: args?.tag ?? null } });
+        },
+        setFilterPriority({ dispatch }, args) {
+          dispatch({ type: "kanban/filter-priority.set", payload: { priority: args?.priority ?? null } });
+        },
+        clearFilters({ dispatch }) {
+          dispatch({ type: "kanban/filters.clear" });
+        },
+        toggleCollapsed({ dispatch }, args) {
+          dispatch({ type: "kanban/column.toggle-collapsed", payload: { columnId: String(args?.columnId ?? "") } });
+        }
+      }
+    })
+```
+</hypercard:card:v2>
+````
 
 ## Strong Default For Small Models
 
@@ -632,6 +729,7 @@ System actions:
 - Do not mutate `state`.
 - Do not assume a domain shape that was not provided.
 - Do not return raw strings, numbers, arrays, or multiple roots from `render()`.
+- Do not omit `runtime.pack: kanban.v1` when the card is clearly a Kanban board.
 - Do not leave the outer `<hypercard:card:v2>` tag unclosed.
 
 ## Final Checklist
@@ -642,7 +740,8 @@ Before finishing, verify all of the following:
 - You emitted exactly one `<hypercard:card:v2>` block.
 - The YAML is valid.
 - `card.code` is a single JS expression.
-- `render()` returns one root `ui.panel([...])`.
+- For default UI cards, `render()` returns one root `ui.panel([...])`.
 - Every widget is from the supported list above.
 - Every handler name referenced by an event ref exists in `handlers`.
+- If the card is Kanban-shaped, `runtime.pack` is `kanban.v1` and the code uses `widgets.kanban.board(...)`.
 - The outer closing tag `</hypercard:card:v2>` is present.
