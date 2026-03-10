@@ -1,23 +1,26 @@
 import type { CardDefinition, CardStackDefinition } from '@hypercard/engine';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
+import { INVENTORY_VM_CARD_META } from './vmmeta';
 
 interface PluginCardMeta {
   id: string;
   title: string;
   icon: string;
+  packId?: string;
+  sourceFile?: string;
+  source?: string;
+  handlerNames?: string[];
 }
 
-const INVENTORY_CARD_META: PluginCardMeta[] = [
-  { id: 'home', title: 'Home', icon: '🏠' },
-  { id: 'browse', title: 'Browse Inventory', icon: '📋' },
-  { id: 'lowStock', title: 'Low Stock', icon: '⚠️' },
-  { id: 'salesToday', title: 'Sales Log', icon: '💰' },
-  { id: 'itemDetail', title: 'Item Detail', icon: '📦' },
-  { id: 'newItem', title: 'New Item', icon: '➕' },
-  { id: 'receive', title: 'Receive Shipment', icon: '📦' },
-  { id: 'priceCheck', title: 'Price Checker', icon: '🏷' },
-  { id: 'report', title: 'Inventory Report', icon: '📊' },
-];
+const INVENTORY_CARD_META: PluginCardMeta[] = INVENTORY_VM_CARD_META.map((card) => ({
+  id: card.id,
+  title: card.title,
+  icon: card.icon,
+  packId: card.packId,
+  sourceFile: card.sourceFile,
+  source: card.source,
+  handlerNames: card.handlerNames,
+}));
 
 function toPluginCard(card: PluginCardMeta): CardDefinition {
   return {
@@ -29,6 +32,16 @@ function toPluginCard(card: PluginCardMeta): CardDefinition {
       t: 'text',
       value: `Plugin card placeholder: ${card.id}`,
     },
+    meta: card.source
+      ? {
+          runtime: {
+            packId: card.packId,
+            sourceFile: card.sourceFile,
+            source: card.source,
+            handlerNames: card.handlerNames ?? [],
+          },
+        }
+      : undefined,
   };
 }
 
