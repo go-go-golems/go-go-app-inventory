@@ -12,8 +12,9 @@ import {
 } from '@hypercard/chat-runtime';
 import {
   HypercardCardRenderer,
-  RuntimeCardDebugWindow,
   PluginCardSessionHost,
+  buildRuntimeDebugWindowPayload,
+  HYPERCARD_RUNTIME_DEBUG_APP_ID,
 } from '@hypercard/hypercard-runtime';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
 import {
@@ -39,7 +40,6 @@ export const INVENTORY_API_BASE_PREFIX_FALLBACK = '/api/apps/inventory';
 const CHAT_INSTANCE_PREFIX = 'chat-';
 const EVENT_VIEW_INSTANCE_PREFIX = 'event-viewer-';
 const TIMELINE_DEBUG_INSTANCE_PREFIX = 'timeline-debug-';
-const RUNTIME_DEBUG_INSTANCE = 'runtime-debug';
 const REDUX_PERF_INSTANCE = 'redux-perf';
 const FOLDER_INSTANCE = 'folder';
 const CHAT_COMMAND_PREFIX = 'inventory.chat.';
@@ -157,16 +157,6 @@ function buildTimelineDebugWindowPayload(convId: string): OpenWindowPayload {
     '🧱',
     { x: 820, y: 60, w: 640, h: 460 },
     `inventory-timeline-debug:${convId}`,
-  );
-}
-
-function buildRuntimeDebugWindowPayload(): OpenWindowPayload {
-  return buildInventoryAppWindowPayload(
-    RUNTIME_DEBUG_INSTANCE,
-    'Stacks & Cards',
-    '🔧',
-    { x: 80, y: 30, w: 560, h: 480 },
-    RUNTIME_DEBUG_INSTANCE,
   );
 }
 
@@ -674,15 +664,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
       },
     },
     {
-      id: 'inventory.debug.stacks',
-      priority: 100,
-      matches: (commandId) => commandId === 'inventory.debug.stacks' || commandId === 'icon.open.inventory.runtime-debug',
-      run: () => {
-        hostContext.openWindow(buildRuntimeDebugWindowPayload());
-        return 'handled';
-      },
-    },
-    {
       id: 'inventory.debug.redux-perf',
       priority: 100,
       matches: (commandId) => commandId === 'inventory.debug.redux-perf' || commandId === 'icon.open.inventory.redux-perf',
@@ -726,7 +707,7 @@ export function createInventoryContributions(hostContext: LauncherHostContext): 
           id: 'debug',
           label: 'Debug',
           items: [
-            { id: 'inventory-debug-stacks', label: '🔧 Stacks & Cards', commandId: 'inventory.debug.stacks' },
+            { id: 'inventory-debug-stacks', label: '🔧 Stacks & Cards', commandId: `app.launch.${HYPERCARD_RUNTIME_DEBUG_APP_ID}` },
             { id: 'inventory-debug-event-viewer', label: '🧭 Event Viewer', commandId: 'inventory.debug.event-viewer' },
             { id: 'inventory-debug-timeline', label: '🧱 Timeline Debug', commandId: 'inventory.debug.timeline-debug' },
             { id: 'inventory-debug-redux', label: '📈 Redux Perf', commandId: 'inventory.debug.redux-perf' },
@@ -766,7 +747,7 @@ function openInventoryFolderIconById(
     return true;
   }
   if (iconId === 'inventory-folder.runtime-debug') {
-    openInventoryWindow(buildRuntimeDebugWindowPayload());
+    openInventoryWindow(buildRuntimeDebugWindowPayload({ appId: HYPERCARD_RUNTIME_DEBUG_APP_ID }));
     return true;
   }
   if (iconId === 'inventory-folder.redux-perf') {
@@ -1015,9 +996,6 @@ export function InventoryLauncherAppWindow({
   if (instanceId.startsWith(TIMELINE_DEBUG_INSTANCE_PREFIX)) {
     const convId = instanceId.slice(TIMELINE_DEBUG_INSTANCE_PREFIX.length);
     return <TimelineDebugWindow conversationId={convId} />;
-  }
-  if (instanceId === RUNTIME_DEBUG_INSTANCE) {
-    return <RuntimeCardDebugWindow stacks={[STACK]} />;
   }
   if (instanceId === REDUX_PERF_INSTANCE) {
     return <ReduxPerfWindow />;
