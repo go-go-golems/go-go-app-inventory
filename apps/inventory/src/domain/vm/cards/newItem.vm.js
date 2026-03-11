@@ -115,7 +115,7 @@ defineRuntimeSurface(
         dispatch({ type: 'notify.show', payload: { message: 'Created ' + sku } });
       },
       goHome({ dispatch }) {
-        dispatch({ type: 'nav.go', payload: { cardId: 'home' } });
+        dispatch({ type: 'nav.go', payload: { surfaceId: 'home' } });
       },
     },
   }),

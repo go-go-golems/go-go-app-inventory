@@ -47,7 +47,7 @@ defineRuntimeSurface(
         dispatch({
           type: 'nav.go',
           payload: {
-            cardId: 'itemDetail',
+            surfaceId: 'itemDetail',
             param: String(asRecord(args).sku || ''),
           },
         });

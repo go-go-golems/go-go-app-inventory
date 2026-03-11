@@ -1,4 +1,4 @@
-When the user's request clearly calls for a visual runtime card (detail panel,
+When the user's request clearly calls for a visual runtime surface (detail panel,
 dashboard, form, chooser, drilldown, report, small tool, interactive widget,
 etc.), emit exactly one `<hypercard:card:v2>` block containing a YAML payload.
 
@@ -10,7 +10,7 @@ tag:
 Do not stop after the closing ``` fence. The outer tag must also be closed.
 
 Before the tag, output one short plain-language sentence that says what the
-card does.
+surface does.
 
 ## Required Envelope
 
@@ -48,13 +48,13 @@ Field rules:
 
 ## Pack Selection
 
-There are currently two card authoring modes:
+There are currently two runtime-package authoring modes:
 
-- Default UI card:
+- Default UI surface:
   - omit `runtime`
   - use `({ ui }) => ({ ... })`
   - return the normal `ui.*` tree
-- Kanban card:
+- Kanban surface:
   - include `runtime.pack: kanban.v1`
   - use `({ widgets }) => ({ ... })`
   - return `widgets.kanban.board(...)`
@@ -574,26 +574,26 @@ clearly available from the task context.
 
 System actions:
 
-- `ctx.dispatch({ type: "nav.go", payload: { cardId: "someCard", param: "optional" } })`
+- `ctx.dispatch({ type: "nav.go", payload: { surfaceId: "someSurface", param: "optional" } })`
 - `ctx.dispatch({ type: "nav.back" })`
 - `ctx.dispatch({ type: "notify.show", payload: { message: "Done" } })`
 - `ctx.dispatch({ type: "window.close" })`
 
 ## Tiny Examples
 
-### 1. Minimal read-only card
+### 1. Minimal read-only surface
 
 ```js
 ({ ui }) => ({
   render() {
     return ui.panel([
-      ui.text("Hello from a runtime card")
+      ui.text("Hello from a runtime surface")
     ]);
   }
 })
 ```
 
-### 2. Small local-state input card
+### 2. Small local-state input surface
 
 ```js
 ({ ui }) => ({
@@ -740,8 +740,8 @@ Before finishing, verify all of the following:
 - You emitted exactly one `<hypercard:card:v2>` block.
 - The YAML is valid.
 - `card.code` is a single JS expression.
-- For default UI cards, `render()` returns one root `ui.panel([...])`.
+- For default UI surfaces, `render()` returns one root `ui.panel([...])`.
 - Every widget is from the supported list above.
 - Every handler name referenced by an event ref exists in `handlers`.
-- If the card is Kanban-shaped, `runtime.pack` is `kanban.v1` and the code uses `widgets.kanban.board(...)`.
+- If the surface is Kanban-shaped, `runtime.pack` is `kanban.v1` and the code uses `widgets.kanban.board(...)`.
 - The outer closing tag `</hypercard:card:v2>` is present.

@@ -38,20 +38,20 @@ defineRuntimeSurface(
         ui.text('Quick open:'),
         ui.column(quickOpen),
         ui.row([
-          ui.button('➕ New Item', { onClick: { handler: 'go', args: { cardId: 'newItem' } } }),
-          ui.button('🏠 Home', { onClick: { handler: 'go', args: { cardId: 'home' } } }),
+          ui.button('➕ New Item', { onClick: { handler: 'go', args: { surfaceId: 'newItem' } } }),
+          ui.button('🏠 Home', { onClick: { handler: 'go', args: { surfaceId: 'home' } } }),
         ]),
       ]);
     },
     handlers: {
       go({ dispatch }, args) {
-        dispatch({ type: 'nav.go', payload: { cardId: String(asRecord(args).cardId || 'home') } });
+        dispatch({ type: 'nav.go', payload: { surfaceId: String(asRecord(args).surfaceId || 'home') } });
       },
       open({ dispatch }, args) {
         dispatch({
           type: 'nav.go',
           payload: {
-            cardId: 'itemDetail',
+            surfaceId: 'itemDetail',
             param: String(asRecord(args).sku || ''),
           },
         });

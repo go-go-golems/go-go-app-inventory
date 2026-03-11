@@ -1,24 +1,24 @@
 // @ts-check
 __package__({
   name: 'ui.card.v1',
-  title: 'UI Card Runtime Pack',
+  title: 'UI Runtime Package',
   category: 'runtime-pack',
   version: '1',
-  description: 'Structured UI-card runtime pack for classic HyperCard-style cards.',
+  description: 'Structured UI runtime package for classic panel-and-table surfaces.',
 });
 
 doc`
 ---
 package: ui.card.v1
 ---
-The ui.card.v1 pack exposes a small structured UI DSL for classic HyperCard-style cards. Cards
-compose ui.panel([...]) from simpler primitives such as text, button, input, row, column, badge,
+The ui.card.v1 package exposes a small structured UI DSL for classic panel-and-table runtime
+surfaces. Surfaces compose ui.panel([...]) from simpler primitives such as text, button, input, row, column, badge,
 and table. The VM remains responsible for semantic state selection and action dispatch. The host
 owns actual rendering and event plumbing.
 `;
 
 __doc__('ui.panel', {
-  summary: 'Compose the root container for a classic ui.card.v1 card.',
+  summary: 'Compose the root container for a classic ui.card.v1 runtime surface.',
   tags: ['dsl', 'ui-card', 'layout'],
 });
 
@@ -26,7 +26,7 @@ doc`
 ---
 symbol: ui.panel
 ---
-Use ui.panel([...]) as the outer container for a card. Most inventory cards return one panel with
+Use ui.panel([...]) as the outer container for a runtime surface. Most inventory surfaces return one panel with
 rows, buttons, tables, and badges inside.
 `;
 
