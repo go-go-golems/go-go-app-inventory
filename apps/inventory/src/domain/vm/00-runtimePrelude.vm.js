@@ -1,4 +1,5 @@
 // @ts-check
+// Bundle-local Inventory helpers. Public VM DSL APIs belong to runtime packages (`ui`).
 function __package__() {}
 function __doc__() {}
 function __example__() {}

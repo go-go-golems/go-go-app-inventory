@@ -10,9 +10,13 @@ import receiveCard from './vm/cards/receive.vm.js?raw';
 import reportCard from './vm/cards/report.vm.js?raw';
 import salesTodayCard from './vm/cards/salesToday.vm.js?raw';
 
-export const INVENTORY_PLUGIN_BUNDLE = [
+// Inventory keeps its formatting/select helpers bundle-local; reusable DSL belongs to runtime packages.
+const INVENTORY_BUNDLE_PRELUDE = [
   runtimePrelude,
   inventoryPackDocs,
+];
+
+const INVENTORY_BUNDLE_SURFACES = [
   homeCard,
   browseCard,
   lowStockCard,
@@ -22,4 +26,9 @@ export const INVENTORY_PLUGIN_BUNDLE = [
   receiveCard,
   priceCheckCard,
   reportCard,
+];
+
+export const INVENTORY_PLUGIN_BUNDLE = [
+  ...INVENTORY_BUNDLE_PRELUDE,
+  ...INVENTORY_BUNDLE_SURFACES,
 ].join('\n\n');
