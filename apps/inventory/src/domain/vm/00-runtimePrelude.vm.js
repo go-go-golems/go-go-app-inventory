@@ -129,6 +129,7 @@ function parseTags(value) {
 defineRuntimeBundle(() => ({
   id: 'inventory',
   title: 'Shop Inventory',
+  packageIds: ["ui"],
   description: 'Inventory HyperCard stack using the ui.card.v1 DSL.',
   initialSessionState: {
     lowStockThreshold: 3,

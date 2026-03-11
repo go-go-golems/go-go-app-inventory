@@ -51,6 +51,7 @@ export const STACK: CardStackDefinition = {
   icon: '📇',
   homeCard: 'home',
   plugin: {
+    packageIds: ['ui'],
     bundleCode: INVENTORY_PLUGIN_BUNDLE,
     capabilities: {
       domain: ['inventory', 'sales'],

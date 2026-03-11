@@ -19,8 +19,9 @@ describe('inventory runtime cards', () => {
     const service = new QuickJSRuntimeService();
     services.push(service);
 
-    const bundle = await service.loadRuntimeBundle('inventory', 'inventory@test', INVENTORY_PLUGIN_BUNDLE);
+    const bundle = await service.loadRuntimeBundle('inventory', 'inventory@test', ['ui'], INVENTORY_PLUGIN_BUNDLE);
     expect(INVENTORY_VM_PACK_METADATA.packId).toBe('ui.card.v1');
+    expect(bundle.packageIds).toEqual(['ui']);
     expect(bundle.surfaces).toEqual(expect.arrayContaining(INVENTORY_VM_CARD_META.map((card) => card.id)));
     expect(bundle.surfaceTypes).toMatchObject(
       Object.fromEntries(INVENTORY_VM_CARD_META.map((card) => [card.id, 'ui.card.v1'])),
