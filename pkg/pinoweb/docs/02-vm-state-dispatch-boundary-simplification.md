@@ -547,13 +547,13 @@ Same pattern:
 Current:
 
 ```js
-dispatchSystemCommand("nav.go", { cardId: "detail", param: "A-100" })
+dispatchSystemCommand("nav.go", { surfaceId: "detail", param: "A-100" })
 ```
 
 Target:
 
 ```js
-dispatch({ type: "nav.go", payload: { cardId: "detail", param: "A-100" } })
+dispatch({ type: "nav.go", payload: { surfaceId: "detail", param: "A-100" } })
 dispatch({ type: "notify", payload: { message: "Saved" } })
 dispatch({ type: "window.close" })
 ```
@@ -730,13 +730,13 @@ interface EventCardRequest {
 
 Replace:
 
-- `renderCard(sessionId, cardId, cardState, sessionState, globalState)`
-- `eventCard(sessionId, cardId, handler, args, cardState, sessionState, globalState)`
+- `renderRuntimeSurface(sessionId, surfaceId, state)`
+- `eventRuntimeSurface(sessionId, surfaceId, handler, args, state)`
 
 With:
 
-- `renderCard(sessionId, cardId, state)`
-- `eventCard(sessionId, cardId, handler, args, state)`
+- `renderRuntimeSurface(sessionId, surfaceId, state)`
+- `eventRuntimeSurface(sessionId, surfaceId, handler, args, state)`
 
 ### 4. `PluginCardSessionHost.tsx`
 
