@@ -21,7 +21,7 @@ The itemDetail card is the main editable form example in the inventory stack. It
 draft-backed field editing, optimistic quantity delta actions, and destructive item removal.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'itemDetail',
   ({ ui }) => ({
     render({ state }) {

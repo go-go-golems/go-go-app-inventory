@@ -21,7 +21,7 @@ The salesToday card shows how a ui.card.v1 card can render derived totals alongs
 secondary navigation list.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'salesToday',
   ({ ui }) => ({
     render({ state }) {

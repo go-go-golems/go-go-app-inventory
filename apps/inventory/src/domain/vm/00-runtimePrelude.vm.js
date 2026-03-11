@@ -126,7 +126,7 @@ function parseTags(value) {
     .filter((part) => part.length > 0);
 }
 
-defineStackBundle(() => ({
+defineRuntimeBundle(() => ({
   id: 'inventory',
   title: 'Shop Inventory',
   description: 'Inventory HyperCard stack using the ui.card.v1 DSL.',
@@ -134,7 +134,7 @@ defineStackBundle(() => ({
     lowStockThreshold: 3,
     aiModel: 'Local LLM',
   },
-  initialCardState: {
+  initialSurfaceState: {
     itemDetail: { edits: {} },
     newItem: {
       form: { sku: '', name: '', category: 'Accessories', price: 0, cost: 0, qty: 0 },
@@ -143,5 +143,5 @@ defineStackBundle(() => ({
     receive: { form: { sku: '', qty: 1, note: '' }, submitResult: '' },
     priceCheck: { form: { sku: '' }, submitResult: '' },
   },
-  cards: {},
+  surfaces: {},
 }));

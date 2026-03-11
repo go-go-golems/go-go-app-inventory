@@ -21,7 +21,7 @@ The newItem card demonstrates a full create flow with validation, draft state, a
 notifications using the ui.card.v1 primitives.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'newItem',
   ({ ui }) => ({
     render({ state }) {

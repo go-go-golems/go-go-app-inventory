@@ -21,7 +21,7 @@ The lowStock card filters inventory rows against the active threshold and demons
 alert-style workflow with mock supplier and print actions.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'lowStock',
   ({ ui }) => ({
     render({ state }) {

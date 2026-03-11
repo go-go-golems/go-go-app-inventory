@@ -21,7 +21,7 @@ The priceCheck card is the smallest form example in the inventory stack. It show
 lookup flow can still use the same draft/result pattern as larger cards.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'priceCheck',
   ({ ui }) => ({
     render({ state }) {

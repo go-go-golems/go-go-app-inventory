@@ -21,7 +21,7 @@ The home card is the entry point for the inventory stack. It demonstrates a simp
 built entirely from text and button primitives.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'home',
   ({ ui }) => ({
     render() {

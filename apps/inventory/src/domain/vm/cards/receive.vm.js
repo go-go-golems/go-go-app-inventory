@@ -21,7 +21,7 @@ The receive card is a compact form workflow for stock intake. It demonstrates dr
 state and a simple success/error result badge.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'receive',
   ({ ui }) => ({
     render({ state }) {

@@ -21,7 +21,7 @@ The report card demonstrates a read-only summary card built from derived metrics
 records. It is useful as a compact example of a reporting-style ui.card.v1 page.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'report',
   ({ ui }) => ({
     render({ state }) {

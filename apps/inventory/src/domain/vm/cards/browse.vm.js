@@ -21,7 +21,7 @@ The browse card demonstrates a table-heavy ui.card.v1 screen. It renders all inv
 secondary quick-open action column for jumping into item detail.
 `;
 
-defineCard(
+defineRuntimeSurface(
   'browse',
   ({ ui }) => ({
     render({ state }) {

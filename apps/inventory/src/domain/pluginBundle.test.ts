@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { QuickJSCardRuntimeService } from '@hypercard/hypercard-runtime';
+import { QuickJSRuntimeService } from '@hypercard/hypercard-runtime';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META, INVENTORY_VM_PACK_METADATA } from './vmmeta';
 
 describe('inventory runtime cards', () => {
-  const services: QuickJSCardRuntimeService[] = [];
+  const services: QuickJSRuntimeService[] = [];
 
   afterEach(() => {
     for (const service of services) {
@@ -16,17 +16,17 @@ describe('inventory runtime cards', () => {
   });
 
   it('loads the inventory ui.card.v1 cards and preserves generated card metadata', async () => {
-    const service = new QuickJSCardRuntimeService();
+    const service = new QuickJSRuntimeService();
     services.push(service);
 
-    const bundle = await service.loadStackBundle('inventory', 'inventory@test', INVENTORY_PLUGIN_BUNDLE);
+    const bundle = await service.loadRuntimeBundle('inventory', 'inventory@test', INVENTORY_PLUGIN_BUNDLE);
     expect(INVENTORY_VM_PACK_METADATA.packId).toBe('ui.card.v1');
-    expect(bundle.cards).toEqual(expect.arrayContaining(INVENTORY_VM_CARD_META.map((card) => card.id)));
-    expect(bundle.cardPacks).toMatchObject(
+    expect(bundle.surfaces).toEqual(expect.arrayContaining(INVENTORY_VM_CARD_META.map((card) => card.id)));
+    expect(bundle.surfaceTypes).toMatchObject(
       Object.fromEntries(INVENTORY_VM_CARD_META.map((card) => [card.id, 'ui.card.v1'])),
     );
 
-    const rendered = service.renderCard('inventory@test', 'home', {});
+    const rendered = service.renderRuntimeSurface('inventory@test', 'home', {});
     expect(rendered).toMatchObject({
       kind: 'panel',
       children: expect.arrayContaining([
