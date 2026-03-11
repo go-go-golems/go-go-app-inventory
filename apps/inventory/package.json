@@ -33,6 +33,7 @@
     "@codemirror/view": "^6.39.14",
     "@reduxjs/toolkit": "^2.5.0",
     "@hypercard/chat-runtime": "workspace:*",
+    "@hypercard/kanban-runtime": "workspace:*",
     "@hypercard/hypercard-runtime": "workspace:*",
     "codemirror": "^6.0.2",
     "react": "^19.0.0",
