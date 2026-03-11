@@ -35,6 +35,7 @@
     "@hypercard/chat-runtime": "workspace:*",
     "@hypercard/kanban-runtime": "workspace:*",
     "@hypercard/hypercard-runtime": "workspace:*",
+    "@hypercard/ui-runtime": "workspace:*",
     "codemirror": "^6.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

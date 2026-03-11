@@ -1,5 +1,4 @@
 import runtimePrelude from './vm/00-runtimePrelude.vm.js?raw';
-import inventoryPackDocs from './vm/docs/inventory-pack.docs.vm.js?raw';
 import browseCard from './vm/cards/browse.vm.js?raw';
 import homeSurface from './vm/cards/home.vm.js?raw';
 import itemDetailCard from './vm/cards/itemDetail.vm.js?raw';
@@ -13,7 +12,6 @@ import salesTodayCard from './vm/cards/salesToday.vm.js?raw';
 // Inventory keeps its formatting/select helpers bundle-local; reusable DSL belongs to runtime packages.
 const INVENTORY_BUNDLE_PRELUDE = [
   runtimePrelude,
-  inventoryPackDocs,
 ];
 
 const INVENTORY_BUNDLE_SURFACES = [

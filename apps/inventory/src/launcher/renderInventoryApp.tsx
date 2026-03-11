@@ -15,11 +15,11 @@ import {
   RuntimeSurfaceSessionHost,
   buildRuntimeDebugWindowPayload,
   HYPERCARD_RUNTIME_DEBUG_APP_ID,
-  registerBuiltInHypercardRuntime,
   registerRuntimePackage,
   registerRuntimeSurfaceType,
 } from '@hypercard/hypercard-runtime';
 import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@hypercard/kanban-runtime';
+import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@hypercard/ui-runtime';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
 import {
   DesktopIconLayer,
@@ -41,7 +41,8 @@ import { ReduxPerfWindow } from '../features/debug/ReduxPerfWindow';
 
 const INVENTORY_APP_ID = 'inventory';
 export const INVENTORY_API_BASE_PREFIX_FALLBACK = '/api/apps/inventory';
-registerBuiltInHypercardRuntime();
+registerRuntimePackage(UI_RUNTIME_PACKAGE);
+registerRuntimeSurfaceType(UI_CARD_V1_RUNTIME_SURFACE_TYPE);
 registerRuntimePackage(KANBAN_RUNTIME_PACKAGE);
 registerRuntimeSurfaceType(KANBAN_V1_RUNTIME_SURFACE_TYPE);
 const CHAT_INSTANCE_PREFIX = 'chat-';
