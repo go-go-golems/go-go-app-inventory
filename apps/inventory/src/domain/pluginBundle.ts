@@ -1,7 +1,7 @@
 import runtimePrelude from './vm/00-runtimePrelude.vm.js?raw';
 import inventoryPackDocs from './vm/docs/inventory-pack.docs.vm.js?raw';
 import browseCard from './vm/cards/browse.vm.js?raw';
-import homeCard from './vm/cards/home.vm.js?raw';
+import homeSurface from './vm/cards/home.vm.js?raw';
 import itemDetailCard from './vm/cards/itemDetail.vm.js?raw';
 import lowStockCard from './vm/cards/lowStock.vm.js?raw';
 import newItemCard from './vm/cards/newItem.vm.js?raw';
@@ -17,7 +17,7 @@ const INVENTORY_BUNDLE_PRELUDE = [
 ];
 
 const INVENTORY_BUNDLE_SURFACES = [
-  homeCard,
+  homeSurface,
   browseCard,
   lowStockCard,
   salesTodayCard,
