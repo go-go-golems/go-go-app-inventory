@@ -7,7 +7,7 @@ import '@hypercard/engine/theme/classic.css';
 import '@hypercard/engine/theme/modern.css';
 
 function ThemedShell({ themeClass }: { themeClass?: string }) {
-  return <DesktopShell stack={STACK} themeClass={themeClass} />;
+  return <DesktopShell bundle={STACK} themeClass={themeClass} />;
 }
 
 function ThemedStoreDecorator(Story: React.ComponentType) {

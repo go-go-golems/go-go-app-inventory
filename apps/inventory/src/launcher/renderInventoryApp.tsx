@@ -108,13 +108,13 @@ function buildInventoryAppWindowPayload(
   };
 }
 
-function buildInventoryCardWindowPayload(cardId: string, options?: { dedupe?: boolean }): OpenWindowPayload {
-  const card = STACK.cards[cardId];
-  const sessionId = nextInstanceId(`inv-card-${cardId}-`);
+function buildInventorySurfaceWindowPayload(surfaceId: string, options?: { dedupe?: boolean }): OpenWindowPayload {
+  const surface = STACK.surfaces[surfaceId];
+  const sessionId = nextInstanceId(`inv-surface-${surfaceId}-`);
   return {
-    id: `window:inventory:card:${cardId}:${sessionId}`,
-    title: card?.title ?? cardId,
-    icon: card?.icon ?? '📄',
+    id: `window:inventory:surface:${surfaceId}:${sessionId}`,
+    title: surface?.title ?? surfaceId,
+    icon: surface?.icon ?? '📄',
     bounds: {
       x: 180 + Math.round(Math.random() * 60),
       y: 40 + Math.round(Math.random() * 40),
@@ -122,14 +122,14 @@ function buildInventoryCardWindowPayload(cardId: string, options?: { dedupe?: bo
       h: 620,
     },
     content: {
-      kind: 'card',
-      card: {
-        stackId: STACK.id,
-        cardId,
-        cardSessionId: sessionId,
+      kind: 'surface',
+      surface: {
+        bundleId: STACK.id,
+        surfaceId,
+        surfaceSessionId: sessionId,
       },
     },
-    dedupeKey: options?.dedupe ? `inventory-card:${cardId}` : undefined,
+    dedupeKey: options?.dedupe ? `inventory-surface:${surfaceId}` : undefined,
   };
 }
 
@@ -438,16 +438,16 @@ function buildConversationContextActions(convId: string): DesktopActionEntry[] {
 function createInventoryCardAdapter(): WindowContentAdapter {
   return {
     id: 'inventory.card-adapter',
-    canRender: (window) => window.content.kind === 'card' && window.content.card?.stackId === STACK.id,
+    canRender: (window) => window.content.kind === 'surface' && window.content.surface?.bundleId === STACK.id,
     render: (window, ctx) => {
-      if (window.content.kind !== 'card' || !window.content.card) {
+      if (window.content.kind !== 'surface' || !window.content.surface) {
         return null;
       }
       return (
         <RuntimeSurfaceSessionHost
           windowId={window.id}
-          sessionId={window.content.card.cardSessionId}
-          stack={STACK}
+          sessionId={window.content.surface.surfaceSessionId}
+          bundle={STACK}
           mode={ctx.mode}
         />
       );
@@ -629,11 +629,11 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
       priority: 100,
       matches: (commandId) => asCardId(commandId) !== null,
       run: (commandId) => {
-        const cardId = asCardId(commandId);
-        if (!cardId || !STACK.cards[cardId]) {
+        const surfaceId = asCardId(commandId);
+        if (!surfaceId || !STACK.surfaces[surfaceId]) {
           return 'pass';
         }
-        hostContext.openWindow(buildInventoryCardWindowPayload(cardId));
+        hostContext.openWindow(buildInventorySurfaceWindowPayload(surfaceId));
         return 'handled';
       },
     },
@@ -688,8 +688,8 @@ export function createInventoryContributions(hostContext: LauncherHostContext): 
             { id: 'inventory-new-chat', label: 'New Inventory Chat', commandId: 'inventory.chat.new', shortcut: 'Ctrl+N' },
             {
               id: 'inventory-open-home',
-              label: `Open ${STACK.cards[STACK.homeCard]?.title ?? 'Home'}`,
-              commandId: `inventory.card.open.${STACK.homeCard}`,
+              label: `Open ${STACK.surfaces[STACK.homeSurface]?.title ?? 'Home'}`,
+              commandId: `inventory.card.open.${STACK.homeSurface}`,
             },
             { id: 'inventory-close-focused', label: 'Close Window', commandId: 'window.close-focused', shortcut: 'Ctrl+W' },
           ],
@@ -697,10 +697,10 @@ export function createInventoryContributions(hostContext: LauncherHostContext): 
         {
           id: 'cards',
           label: 'Cards',
-          items: Object.keys(STACK.cards).map((cardId) => ({
-            id: `inventory-open-${cardId}`,
-            label: `${STACK.cards[cardId].icon ?? ''} ${STACK.cards[cardId].title ?? cardId}`.trim(),
-            commandId: `inventory.card.open.${cardId}`,
+          items: Object.keys(STACK.surfaces).map((surfaceId) => ({
+            id: `inventory-open-${surfaceId}`,
+            label: `${STACK.surfaces[surfaceId].icon ?? ''} ${STACK.surfaces[surfaceId].title ?? surfaceId}`.trim(),
+            commandId: `inventory.card.open.${surfaceId}`,
           })),
         },
         {
@@ -726,10 +726,10 @@ const INVENTORY_FOLDER_ICONS: DesktopIconDef[] = [
   { id: 'inventory-folder.event-viewer', label: 'Event Viewer', icon: '🧭' },
   { id: 'inventory-folder.timeline-debug', label: 'Timeline Debug', icon: '🧱' },
   { id: 'inventory-folder.redux-perf', label: 'Redux Perf', icon: '📈' },
-  ...Object.keys(STACK.cards).map((cardId) => ({
-    id: `inventory-folder.card.${cardId}`,
-    label: STACK.cards[cardId].title ?? cardId,
-    icon: STACK.cards[cardId].icon ?? '📄',
+  ...Object.keys(STACK.surfaces).map((surfaceId) => ({
+    id: `inventory-folder.card.${surfaceId}`,
+    label: STACK.surfaces[surfaceId].title ?? surfaceId,
+    icon: STACK.surfaces[surfaceId].icon ?? '📄',
   })),
 ];
 
@@ -781,11 +781,11 @@ function openInventoryFolderIconById(
     return true;
   }
   if (iconId.startsWith('inventory-folder.card.')) {
-    const cardId = iconId.replace('inventory-folder.card.', '').trim();
-    if (!cardId || !STACK.cards[cardId]) {
+    const surfaceId = iconId.replace('inventory-folder.card.', '').trim();
+    if (!surfaceId || !STACK.surfaces[surfaceId]) {
       return false;
     }
-    openInventoryWindow(buildInventoryCardWindowPayload(cardId));
+    openInventoryWindow(buildInventorySurfaceWindowPayload(surfaceId));
     return true;
   }
   return false;

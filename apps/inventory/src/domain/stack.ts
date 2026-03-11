@@ -1,4 +1,4 @@
-import type { CardDefinition, CardStackDefinition } from '@hypercard/engine';
+import type { RuntimeSurfaceMeta, RuntimeBundleDefinition } from '@hypercard/engine';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META } from './vmmeta';
 
@@ -22,7 +22,7 @@ const INVENTORY_CARD_META: PluginCardMeta[] = INVENTORY_VM_CARD_META.map((card) 
   handlerNames: card.handlerNames,
 }));
 
-function toPluginCard(card: PluginCardMeta): CardDefinition {
+function toPluginCard(card: PluginCardMeta): RuntimeSurfaceMeta {
   return {
     id: card.id,
     type: 'plugin',
@@ -45,11 +45,11 @@ function toPluginCard(card: PluginCardMeta): CardDefinition {
   };
 }
 
-export const STACK: CardStackDefinition = {
+export const STACK: RuntimeBundleDefinition = {
   id: 'inventory',
   name: 'Shop Inventory',
   icon: '📇',
-  homeCard: 'home',
+  homeSurface: 'home',
   plugin: {
     packageIds: ['ui'],
     bundleCode: INVENTORY_PLUGIN_BUNDLE,
@@ -58,5 +58,5 @@ export const STACK: CardStackDefinition = {
       system: ['nav.go', 'nav.back', 'notify.show', 'window.close'],
     },
   },
-  cards: Object.fromEntries(INVENTORY_CARD_META.map((card) => [card.id, toPluginCard(card)])),
+  surfaces: Object.fromEntries(INVENTORY_CARD_META.map((card) => [card.id, toPluginCard(card)])),
 };
