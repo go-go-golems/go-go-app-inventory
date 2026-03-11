@@ -12,7 +12,7 @@ import {
 } from '@hypercard/chat-runtime';
 import {
   HypercardCardRenderer,
-  PluginCardSessionHost,
+  RuntimeSurfaceSessionHost,
   buildRuntimeDebugWindowPayload,
   HYPERCARD_RUNTIME_DEBUG_APP_ID,
 } from '@hypercard/hypercard-runtime';
@@ -444,7 +444,7 @@ function createInventoryCardAdapter(): WindowContentAdapter {
         return null;
       }
       return (
-        <PluginCardSessionHost
+        <RuntimeSurfaceSessionHost
           windowId={window.id}
           sessionId={window.content.card.cardSessionId}
           stack={STACK}
