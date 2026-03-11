@@ -15,6 +15,7 @@ import {
   RuntimeSurfaceSessionHost,
   buildRuntimeDebugWindowPayload,
   HYPERCARD_RUNTIME_DEBUG_APP_ID,
+  registerBuiltInHypercardRuntime,
 } from '@hypercard/hypercard-runtime';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
 import {
@@ -37,6 +38,7 @@ import { ReduxPerfWindow } from '../features/debug/ReduxPerfWindow';
 
 const INVENTORY_APP_ID = 'inventory';
 export const INVENTORY_API_BASE_PREFIX_FALLBACK = '/api/apps/inventory';
+registerBuiltInHypercardRuntime();
 const CHAT_INSTANCE_PREFIX = 'chat-';
 const EVENT_VIEW_INSTANCE_PREFIX = 'event-viewer-';
 const TIMELINE_DEBUG_INSTANCE_PREFIX = 'timeline-debug-';

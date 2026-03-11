@@ -1,10 +1,23 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { QuickJSRuntimeService } from '@hypercard/hypercard-runtime';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  QuickJSRuntimeService,
+  registerBuiltInHypercardRuntime,
+  resetBuiltInHypercardRuntimeRegistrationForTest,
+  clearRuntimePackages,
+  clearRuntimeSurfaceTypes,
+} from '@hypercard/hypercard-runtime';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META, INVENTORY_VM_PACK_METADATA } from './vmmeta';
 
 describe('inventory runtime surfaces', () => {
   const services: QuickJSRuntimeService[] = [];
+
+  beforeEach(() => {
+    clearRuntimePackages();
+    clearRuntimeSurfaceTypes();
+    resetBuiltInHypercardRuntimeRegistrationForTest();
+    registerBuiltInHypercardRuntime();
+  });
 
   afterEach(() => {
     for (const service of services) {
