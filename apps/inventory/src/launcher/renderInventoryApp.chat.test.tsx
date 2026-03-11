@@ -74,7 +74,7 @@ describe('inventory chat card projection', () => {
 
     const artifact = store.getState().hypercardArtifacts.byId['inventory-drilldown'];
     expect(artifact?.title).toBe('Inventory Drilldown');
-    expect(artifact?.runtimeCardId).toBe('runtimeInventoryDrilldown');
+    expect(artifact?.runtimeSurfaceId).toBe('runtimeInventoryDrilldown');
     expect(artifact?.packId).toBeUndefined();
   });
 
@@ -142,7 +142,7 @@ describe('inventory chat card projection', () => {
 
     const artifact = store.getState().hypercardArtifacts.byId['sprint-board'];
     expect(artifact?.title).toBe('Sprint Board');
-    expect(artifact?.runtimeCardId).toBe('sprintBoard');
+    expect(artifact?.runtimeSurfaceId).toBe('sprintBoard');
     expect(artifact?.packId).toBe('kanban.v1');
   });
 });
