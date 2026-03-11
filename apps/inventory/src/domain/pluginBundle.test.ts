@@ -3,7 +3,7 @@ import { QuickJSRuntimeService } from '@hypercard/hypercard-runtime';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META, INVENTORY_VM_PACK_METADATA } from './vmmeta';
 
-describe('inventory runtime cards', () => {
+describe('inventory runtime surfaces', () => {
   const services: QuickJSRuntimeService[] = [];
 
   afterEach(() => {
@@ -15,7 +15,7 @@ describe('inventory runtime cards', () => {
     services.length = 0;
   });
 
-  it('loads the inventory ui.card.v1 cards and preserves generated card metadata', async () => {
+  it('loads the inventory ui.card.v1 surfaces and preserves generated surface metadata', async () => {
     const service = new QuickJSRuntimeService();
     services.push(service);
 

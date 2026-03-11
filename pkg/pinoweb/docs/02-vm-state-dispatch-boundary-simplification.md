@@ -401,7 +401,7 @@ Recommended layers:
 
 ### Layer 1: Internal State Stores
 
-- runtime card-local state
+- runtime surface-local state
 - runtime session-local state
 - Redux domain state
 - nav/window state
@@ -565,7 +565,7 @@ the concept of a special command channel.
 
 ## How This Helps HTTP / DB / Async Query Work
 
-This simplification is a prerequisite for effectful runtime cards.
+This simplification is a prerequisite for effectful runtime surfaces.
 
 You said you want VM code to trigger things like:
 
