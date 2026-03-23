@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/profiles"
 	chatservice "github.com/go-go-golems/go-go-os-chat/pkg/chatservice"
 	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
 	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
@@ -15,8 +15,6 @@ import (
 const AppID = "inventory"
 
 const (
-	defaultWriteActor       = "inventory-backend-component"
-	defaultWriteSource      = "http-api"
 	defaultConfirmMountPath = "/confirm"
 )
 
@@ -43,8 +41,6 @@ type Options struct {
 	ProfileRegistry       gepprofiles.Registry
 	DefaultRegistrySlug   gepprofiles.RegistrySlug
 	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	WriteActor            string
-	WriteSource           string
 	ConfirmMountPath      string
 }
 
@@ -58,14 +54,6 @@ func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
 	if registrySlug.IsZero() {
 		registrySlug = gepprofiles.MustRegistrySlug("default")
 	}
-	writeActor := opts.WriteActor
-	if writeActor == "" {
-		writeActor = defaultWriteActor
-	}
-	writeSource := opts.WriteSource
-	if writeSource == "" {
-		writeSource = defaultWriteSource
-	}
 	confirmMountPath := opts.ConfirmMountPath
 	if confirmMountPath == "" {
 		confirmMountPath = defaultConfirmMountPath
@@ -78,8 +66,6 @@ func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
 				Registry:                        opts.ProfileRegistry,
 				DefaultRegistrySlug:             registrySlug,
 				MiddlewareDefinitions:           opts.MiddlewareDefinitions,
-				WriteActor:                      writeActor,
-				WriteSource:                     writeSource,
 				EnableCurrentProfileCookieRoute: false,
 			},
 			ConfirmMountPath: confirmMountPath,
