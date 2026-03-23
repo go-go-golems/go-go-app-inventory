@@ -320,6 +320,10 @@ func (s *inventoryRuntimeCardSession) OnCompleted(ctx context.Context, raw []byt
 	if cardCode == "" {
 		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime card.code is required", raw, payloadToMap(snap))}
 	}
+	runtimePack := strings.TrimSpace(snap.Runtime.Pack)
+	if runtimePack == "" {
+		return []events.Event{newRuntimeCardErrorEvent(s.itemID, "runtime.pack is required", raw, payloadToMap(snap))}
+	}
 
 	if !s.started {
 		s.started = true

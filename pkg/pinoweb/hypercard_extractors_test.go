@@ -116,6 +116,8 @@ func TestRuntimeCardExtractor_ValidPayload(t *testing.T) {
 		"  id: low-stock-drilldown\n" +
 		"  data:\n" +
 		"    threshold: 5\n" +
+		"runtime:\n" +
+		"  pack: ui.card.v1\n" +
 		"card:\n" +
 		"  id: lowStockDrilldown\n" +
 		"  code: |-\n" +
@@ -254,6 +256,42 @@ func TestRuntimeCardExtractor_MissingCardId(t *testing.T) {
 	require.Equal(t, "Missing ID", data["name"])
 }
 
+func TestRuntimeCardExtractor_EmptyRuntimePack(t *testing.T) {
+	RegisterInventoryHypercardExtensions()
+
+	col := &collectorSink{}
+	sink := structuredsink.NewFilteringSink(col, structuredsink.Options{
+		Malformed: structuredsink.MalformedErrorEvents,
+	}, &inventoryRuntimeCardExtractor{})
+
+	meta := events.EventMetadata{ID: uuid.New()}
+	full := "<hypercard:card:v2>\n```yaml\n" +
+		"name: Hello World\n" +
+		"title: A simple hello world card\n" +
+		"artifact:\n" +
+		"  id: hello-world\n" +
+		"  data: {}\n" +
+		"runtime:\n" +
+		"  pack: \"\"\n" +
+		"card:\n" +
+		"  id: helloWorld\n" +
+		"  code: |-\n" +
+		"    ({ ui }) => ({ render() { return ui.text(\"Hello, World!\"); } })\n" +
+		"```\n" +
+		"</hypercard:card:v2>"
+
+	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
+	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+
+	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
+	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
+
+	cardErr := firstRuntimeCardErrorEvent(col.events)
+	require.NotNil(t, cardErr)
+	require.Equal(t, "runtime.pack is required", cardErr.Error)
+	require.Contains(t, cardErr.Raw, "pack: \"\"")
+}
+
 func TestRuntimeCardExtractor_MalformedBlockIncludesRawPayload(t *testing.T) {
 	RegisterInventoryHypercardExtensions()
 
@@ -302,6 +340,8 @@ func TestRuntimeCardExtractor_StreamingName(t *testing.T) {
 		"artifact:\n" +
 		"  id: low-stock\n" +
 		"  data: {}\n" +
+		"runtime:\n" +
+		"  pack: ui.card.v1\n" +
 		"card:\n" +
 		"  id: lowStock\n" +
 		"  code: |-\n" +
