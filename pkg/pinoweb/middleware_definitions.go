@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-go-golems/geppetto/pkg/inference/middleware"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/profiles"
+	infruntime "github.com/go-go-golems/pinocchio/pkg/inference/runtime"
 )
 
 type inventoryMiddlewareDefinition struct {
@@ -69,8 +69,8 @@ func newInventoryMiddlewareDefinitionRegistry() (*middlewarecfg.InMemoryDefiniti
 	return registry, nil
 }
 
-func defaultInventoryMiddlewareUses() []gepprofiles.MiddlewareUse {
-	return []gepprofiles.MiddlewareUse{
+func defaultInventoryMiddlewareUses() []infruntime.MiddlewareUse {
+	return []infruntime.MiddlewareUse{
 		{Name: hypercardPolicyMiddlewareName, ID: "artifact-policy"},
 		{Name: hypercardSuggestionsMiddlewareName, ID: "suggestions-policy"},
 	}
