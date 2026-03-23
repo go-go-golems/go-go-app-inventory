@@ -4,17 +4,22 @@ import {
 } from '@hypercard/engine';
 import {
   ChatConversationWindow,
+  ChatProfileSelector,
   ensureChatModulesRegistered,
   EventViewerWindow,
-  registerChatRuntimeModule,
   TimelineDebugWindow,
   chatProfilesSlice,
 } from '@hypercard/chat-runtime';
 import {
-  registerHypercardTimelineModule,
-  RuntimeCardDebugWindow,
-  PluginCardSessionHost,
+  HypercardCardRenderer,
+  RuntimeSurfaceSessionHost,
+  buildRuntimeDebugWindowPayload,
+  HYPERCARD_RUNTIME_DEBUG_APP_ID,
+  registerRuntimePackage,
+  registerRuntimeSurfaceType,
 } from '@hypercard/hypercard-runtime';
+import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@hypercard/kanban-runtime';
+import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@hypercard/ui-runtime';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
 import {
   DesktopIconLayer,
@@ -36,10 +41,13 @@ import { ReduxPerfWindow } from '../features/debug/ReduxPerfWindow';
 
 const INVENTORY_APP_ID = 'inventory';
 export const INVENTORY_API_BASE_PREFIX_FALLBACK = '/api/apps/inventory';
+registerRuntimePackage(UI_RUNTIME_PACKAGE);
+registerRuntimeSurfaceType(UI_CARD_V1_RUNTIME_SURFACE_TYPE);
+registerRuntimePackage(KANBAN_RUNTIME_PACKAGE);
+registerRuntimeSurfaceType(KANBAN_V1_RUNTIME_SURFACE_TYPE);
 const CHAT_INSTANCE_PREFIX = 'chat-';
 const EVENT_VIEW_INSTANCE_PREFIX = 'event-viewer-';
 const TIMELINE_DEBUG_INSTANCE_PREFIX = 'timeline-debug-';
-const RUNTIME_DEBUG_INSTANCE = 'runtime-debug';
 const REDUX_PERF_INSTANCE = 'redux-perf';
 const FOLDER_INSTANCE = 'folder';
 const CHAT_COMMAND_PREFIX = 'inventory.chat.';
@@ -69,14 +77,16 @@ interface InventoryRootState {
     availableProfiles?: Array<{ slug: string; display_name?: string; is_default?: boolean }>;
     selectedProfile?: string | null;
     selectedRegistry?: string | null;
-    selectedByScope?: Record<string, { profile: string | null; registry: string | null }>;
+    selectedByScope?: Record<string, { profile: string | null; registry?: string | null }>;
   };
 }
 
-registerChatRuntimeModule({
-  id: 'chat.hypercard-timeline',
-  register: registerHypercardTimelineModule,
-});
+const INVENTORY_STARTER_SUGGESTIONS = [
+  'Show current inventory status',
+  'What items are low stock?',
+  'Summarize today sales',
+];
+
 ensureChatModulesRegistered();
 
 function nextInstanceId(prefix: string): string {
@@ -106,13 +116,13 @@ function buildInventoryAppWindowPayload(
   };
 }
 
-function buildInventoryCardWindowPayload(cardId: string, options?: { dedupe?: boolean }): OpenWindowPayload {
-  const card = STACK.cards[cardId];
-  const sessionId = nextInstanceId(`inv-card-${cardId}-`);
+function buildInventorySurfaceWindowPayload(surfaceId: string, options?: { dedupe?: boolean }): OpenWindowPayload {
+  const surface = STACK.surfaces[surfaceId];
+  const sessionId = nextInstanceId(`inv-surface-${surfaceId}-`);
   return {
-    id: `window:inventory:card:${cardId}:${sessionId}`,
-    title: card?.title ?? cardId,
-    icon: card?.icon ?? '📄',
+    id: `window:inventory:surface:${surfaceId}:${sessionId}`,
+    title: surface?.title ?? surfaceId,
+    icon: surface?.icon ?? '📄',
     bounds: {
       x: 180 + Math.round(Math.random() * 60),
       y: 40 + Math.round(Math.random() * 40),
@@ -120,14 +130,14 @@ function buildInventoryCardWindowPayload(cardId: string, options?: { dedupe?: bo
       h: 620,
     },
     content: {
-      kind: 'card',
-      card: {
-        stackId: STACK.id,
-        cardId,
-        cardSessionId: sessionId,
+      kind: 'surface',
+      surface: {
+        bundleId: STACK.id,
+        surfaceId,
+        surfaceSessionId: sessionId,
       },
     },
-    dedupeKey: options?.dedupe ? `inventory-card:${cardId}` : undefined,
+    dedupeKey: options?.dedupe ? `inventory-surface:${surfaceId}` : undefined,
   };
 }
 
@@ -155,16 +165,6 @@ function buildTimelineDebugWindowPayload(convId: string): OpenWindowPayload {
     '🧱',
     { x: 820, y: 60, w: 640, h: 460 },
     `inventory-timeline-debug:${convId}`,
-  );
-}
-
-function buildRuntimeDebugWindowPayload(): OpenWindowPayload {
-  return buildInventoryAppWindowPayload(
-    RUNTIME_DEBUG_INSTANCE,
-    'Stacks & Cards',
-    '🔧',
-    { x: 80, y: 30, w: 560, h: 480 },
-    RUNTIME_DEBUG_INSTANCE,
   );
 }
 
@@ -446,16 +446,16 @@ function buildConversationContextActions(convId: string): DesktopActionEntry[] {
 function createInventoryCardAdapter(): WindowContentAdapter {
   return {
     id: 'inventory.card-adapter',
-    canRender: (window) => window.content.kind === 'card' && window.content.card?.stackId === STACK.id,
+    canRender: (window) => window.content.kind === 'surface' && window.content.surface?.bundleId === STACK.id,
     render: (window, ctx) => {
-      if (window.content.kind !== 'card' || !window.content.card) {
+      if (window.content.kind !== 'surface' || !window.content.surface) {
         return null;
       }
       return (
-        <PluginCardSessionHost
+        <RuntimeSurfaceSessionHost
           windowId={window.id}
-          sessionId={window.content.card.cardSessionId}
-          stack={STACK}
+          sessionId={window.content.surface.surfaceSessionId}
+          bundle={STACK}
           mode={ctx.mode}
         />
       );
@@ -515,16 +515,10 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
         if (!parsed || parsed.kind !== 'profile-select') {
           return 'pass';
         }
-        const state = (ctx.getState?.() ?? {}) as InventoryRootState;
         const scopeKey = `conv:${parsed.convId}`;
-        const selectedRegistry =
-          state.chatProfiles?.selectedByScope?.[scopeKey]?.registry ??
-          state.chatProfiles?.selectedRegistry ??
-          'default';
         ctx.dispatch(
           chatProfilesSlice.actions.setSelectedProfile({
             profile: parsed.profile ?? null,
-            registry: selectedRegistry,
             scopeKey,
           }),
         );
@@ -571,10 +565,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
             return 'pass';
           }
           const scopeKey = `conv:${parsed.convId}`;
-          const selectedRegistry =
-            state.chatProfiles?.selectedByScope?.[scopeKey]?.registry ??
-            state.chatProfiles?.selectedRegistry ??
-            'default';
           const currentProfile =
             state.chatProfiles?.selectedByScope?.[scopeKey]?.profile ??
             state.chatProfiles?.selectedProfile ??
@@ -584,7 +574,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
           ctx.dispatch(
             chatProfilesSlice.actions.setSelectedProfile({
               profile: nextProfile?.slug ?? null,
-              registry: selectedRegistry,
               scopeKey,
             }),
           );
@@ -648,11 +637,11 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
       priority: 100,
       matches: (commandId) => asCardId(commandId) !== null,
       run: (commandId) => {
-        const cardId = asCardId(commandId);
-        if (!cardId || !STACK.cards[cardId]) {
+        const surfaceId = asCardId(commandId);
+        if (!surfaceId || !STACK.surfaces[surfaceId]) {
           return 'pass';
         }
-        hostContext.openWindow(buildInventoryCardWindowPayload(cardId));
+        hostContext.openWindow(buildInventorySurfaceWindowPayload(surfaceId));
         return 'handled';
       },
     },
@@ -683,15 +672,6 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
       },
     },
     {
-      id: 'inventory.debug.stacks',
-      priority: 100,
-      matches: (commandId) => commandId === 'inventory.debug.stacks' || commandId === 'icon.open.inventory.runtime-debug',
-      run: () => {
-        hostContext.openWindow(buildRuntimeDebugWindowPayload());
-        return 'handled';
-      },
-    },
-    {
       id: 'inventory.debug.redux-perf',
       priority: 100,
       matches: (commandId) => commandId === 'inventory.debug.redux-perf' || commandId === 'icon.open.inventory.redux-perf',
@@ -716,8 +696,8 @@ export function createInventoryContributions(hostContext: LauncherHostContext): 
             { id: 'inventory-new-chat', label: 'New Inventory Chat', commandId: 'inventory.chat.new', shortcut: 'Ctrl+N' },
             {
               id: 'inventory-open-home',
-              label: `Open ${STACK.cards[STACK.homeCard]?.title ?? 'Home'}`,
-              commandId: `inventory.card.open.${STACK.homeCard}`,
+              label: `Open ${STACK.surfaces[STACK.homeSurface]?.title ?? 'Home'}`,
+              commandId: `inventory.card.open.${STACK.homeSurface}`,
             },
             { id: 'inventory-close-focused', label: 'Close Window', commandId: 'window.close-focused', shortcut: 'Ctrl+W' },
           ],
@@ -725,17 +705,17 @@ export function createInventoryContributions(hostContext: LauncherHostContext): 
         {
           id: 'cards',
           label: 'Cards',
-          items: Object.keys(STACK.cards).map((cardId) => ({
-            id: `inventory-open-${cardId}`,
-            label: `${STACK.cards[cardId].icon ?? ''} ${STACK.cards[cardId].title ?? cardId}`.trim(),
-            commandId: `inventory.card.open.${cardId}`,
+          items: Object.keys(STACK.surfaces).map((surfaceId) => ({
+            id: `inventory-open-${surfaceId}`,
+            label: `${STACK.surfaces[surfaceId].icon ?? ''} ${STACK.surfaces[surfaceId].title ?? surfaceId}`.trim(),
+            commandId: `inventory.card.open.${surfaceId}`,
           })),
         },
         {
           id: 'debug',
           label: 'Debug',
           items: [
-            { id: 'inventory-debug-stacks', label: '🔧 Stacks & Cards', commandId: 'inventory.debug.stacks' },
+            { id: 'inventory-debug-stacks', label: '🔧 Stacks & Cards', commandId: `app.launch.${HYPERCARD_RUNTIME_DEBUG_APP_ID}` },
             { id: 'inventory-debug-event-viewer', label: '🧭 Event Viewer', commandId: 'inventory.debug.event-viewer' },
             { id: 'inventory-debug-timeline', label: '🧱 Timeline Debug', commandId: 'inventory.debug.timeline-debug' },
             { id: 'inventory-debug-redux', label: '📈 Redux Perf', commandId: 'inventory.debug.redux-perf' },
@@ -754,10 +734,10 @@ const INVENTORY_FOLDER_ICONS: DesktopIconDef[] = [
   { id: 'inventory-folder.event-viewer', label: 'Event Viewer', icon: '🧭' },
   { id: 'inventory-folder.timeline-debug', label: 'Timeline Debug', icon: '🧱' },
   { id: 'inventory-folder.redux-perf', label: 'Redux Perf', icon: '📈' },
-  ...Object.keys(STACK.cards).map((cardId) => ({
-    id: `inventory-folder.card.${cardId}`,
-    label: STACK.cards[cardId].title ?? cardId,
-    icon: STACK.cards[cardId].icon ?? '📄',
+  ...Object.keys(STACK.surfaces).map((surfaceId) => ({
+    id: `inventory-folder.card.${surfaceId}`,
+    label: STACK.surfaces[surfaceId].title ?? surfaceId,
+    icon: STACK.surfaces[surfaceId].icon ?? '📄',
   })),
 ];
 
@@ -775,7 +755,7 @@ function openInventoryFolderIconById(
     return true;
   }
   if (iconId === 'inventory-folder.runtime-debug') {
-    openInventoryWindow(buildRuntimeDebugWindowPayload());
+    openInventoryWindow(buildRuntimeDebugWindowPayload({ appId: HYPERCARD_RUNTIME_DEBUG_APP_ID }));
     return true;
   }
   if (iconId === 'inventory-folder.redux-perf') {
@@ -809,11 +789,11 @@ function openInventoryFolderIconById(
     return true;
   }
   if (iconId.startsWith('inventory-folder.card.')) {
-    const cardId = iconId.replace('inventory-folder.card.', '').trim();
-    if (!cardId || !STACK.cards[cardId]) {
+    const surfaceId = iconId.replace('inventory-folder.card.', '').trim();
+    if (!surfaceId || !STACK.surfaces[surfaceId]) {
       return false;
     }
-    openInventoryWindow(buildInventoryCardWindowPayload(cardId));
+    openInventoryWindow(buildInventorySurfaceWindowPayload(surfaceId));
     return true;
   }
   return false;
@@ -950,13 +930,16 @@ function InventoryChatAssistantWindow({
       windowId={windowId}
       basePrefix={apiBasePrefix}
       title="Inventory Chat"
-      enableProfileSelector
-      profileRegistry="default"
-      profileScopeKey={`conv:${convId}`}
+      profilePolicy={{ kind: 'selectable', scopeKey: `conv:${convId}` }}
+      starterSuggestions={INVENTORY_STARTER_SUGGESTIONS}
       renderMode={renderMode}
+      timelineRenderers={{
+        'hypercard.card.v2': HypercardCardRenderer,
+      }}
       conversationContextActions={conversationContextActions}
       headerActions={
         <>
+          <ChatProfileSelector convId={convId} basePrefix={apiBasePrefix} scopeKey={`conv:${convId}`} />
           <button type="button" data-part="btn" onClick={openEventViewer} style={{ fontSize: 10, padding: '1px 6px' }}>
             🧭 Events
           </button>
@@ -1021,9 +1004,6 @@ export function InventoryLauncherAppWindow({
   if (instanceId.startsWith(TIMELINE_DEBUG_INSTANCE_PREFIX)) {
     const convId = instanceId.slice(TIMELINE_DEBUG_INSTANCE_PREFIX.length);
     return <TimelineDebugWindow conversationId={convId} />;
-  }
-  if (instanceId === RUNTIME_DEBUG_INSTANCE) {
-    return <RuntimeCardDebugWindow stacks={[STACK]} />;
   }
   if (instanceId === REDUX_PERF_INSTANCE) {
     return <ReduxPerfWindow />;

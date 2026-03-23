@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/profiles"
 	"github.com/go-go-golems/go-go-app-inventory/pkg/backendcomponent"
 	"github.com/go-go-golems/go-go-os-backend/pkg/backendhost"
 	"github.com/go-go-golems/go-go-os-backend/pkg/docmw"
@@ -30,9 +30,6 @@ type Options struct {
 	ProfileRegistry       gepprofiles.Registry
 	DefaultRegistrySlug   gepprofiles.RegistrySlug
 	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	ExtensionSchemas      []webhttp.ExtensionSchemaDocument
-	WriteActor            string
-	WriteSource           string
 	ConfirmMountPath      string
 }
 
@@ -47,9 +44,6 @@ func NewModule(opts Options) *Module {
 		ProfileRegistry:       opts.ProfileRegistry,
 		DefaultRegistrySlug:   opts.DefaultRegistrySlug,
 		MiddlewareDefinitions: opts.MiddlewareDefinitions,
-		ExtensionSchemas:      append([]webhttp.ExtensionSchemaDocument(nil), opts.ExtensionSchemas...),
-		WriteActor:            opts.WriteActor,
-		WriteSource:           opts.WriteSource,
 		ConfirmMountPath:      opts.ConfirmMountPath,
 	}
 	docStore, docErr := loadDocStore()

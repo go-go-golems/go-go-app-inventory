@@ -5,20 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
+	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/profiles"
+	chatservice "github.com/go-go-golems/go-go-os-chat/pkg/chatservice"
 	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
 	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
-	plzconfirmbackend "github.com/go-go-golems/plz-confirm/pkg/backend"
-	"github.com/gorilla/websocket"
-	"github.com/rs/zerolog/log"
 )
 
 const AppID = "inventory"
 
 const (
-	defaultWriteActor       = "inventory-backend-component"
-	defaultWriteSource      = "http-api"
 	defaultConfirmMountPath = "/confirm"
 )
 
@@ -45,22 +41,12 @@ type Options struct {
 	ProfileRegistry       gepprofiles.Registry
 	DefaultRegistrySlug   gepprofiles.RegistrySlug
 	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	ExtensionSchemas      []webhttp.ExtensionSchemaDocument
-	WriteActor            string
-	WriteSource           string
 	ConfirmMountPath      string
 }
 
 type InventoryBackendComponent struct {
-	server                *webchat.Server
-	requestResolver       webhttp.ConversationRequestResolver
-	profileRegistry       gepprofiles.Registry
-	defaultRegistrySlug   gepprofiles.RegistrySlug
-	middlewareDefinitions middlewarecfg.DefinitionRegistry
-	extensionSchemas      []webhttp.ExtensionSchemaDocument
-	writeActor            string
-	writeSource           string
-	confirmMountPath      string
+	service         *chatservice.Component
+	profileRegistry gepprofiles.Registry
 }
 
 func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
@@ -68,28 +54,23 @@ func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
 	if registrySlug.IsZero() {
 		registrySlug = gepprofiles.MustRegistrySlug("default")
 	}
-	writeActor := opts.WriteActor
-	if writeActor == "" {
-		writeActor = defaultWriteActor
-	}
-	writeSource := opts.WriteSource
-	if writeSource == "" {
-		writeSource = defaultWriteSource
-	}
 	confirmMountPath := opts.ConfirmMountPath
 	if confirmMountPath == "" {
 		confirmMountPath = defaultConfirmMountPath
 	}
 	return &InventoryBackendComponent{
-		server:                opts.Server,
-		requestResolver:       opts.RequestResolver,
-		profileRegistry:       opts.ProfileRegistry,
-		defaultRegistrySlug:   registrySlug,
-		middlewareDefinitions: opts.MiddlewareDefinitions,
-		extensionSchemas:      append([]webhttp.ExtensionSchemaDocument(nil), opts.ExtensionSchemas...),
-		writeActor:            writeActor,
-		writeSource:           writeSource,
-		confirmMountPath:      confirmMountPath,
+		service: chatservice.New(chatservice.Options{
+			Server:          opts.Server,
+			RequestResolver: opts.RequestResolver,
+			ProfileAPI: &chatservice.ProfileAPIOptions{
+				Registry:                        opts.ProfileRegistry,
+				DefaultRegistrySlug:             registrySlug,
+				MiddlewareDefinitions:           opts.MiddlewareDefinitions,
+				EnableCurrentProfileCookieRoute: false,
+			},
+			ConfirmMountPath: confirmMountPath,
+		}),
+		profileRegistry: opts.ProfileRegistry,
 	}
 }
 
@@ -113,68 +94,36 @@ func (m *InventoryBackendComponent) MountRoutes(mux *http.ServeMux) error {
 	if mux == nil {
 		return fmt.Errorf("inventory backend component mount mux is nil")
 	}
-	if m.server == nil {
-		return fmt.Errorf("inventory backend component server is nil")
-	}
-	if m.requestResolver == nil {
-		return fmt.Errorf("inventory backend component request resolver is nil")
-	}
 	if m.profileRegistry == nil {
 		return fmt.Errorf("inventory backend component profile registry is nil")
 	}
-
-	chatHandler := webhttp.NewChatHandler(m.server.ChatService(), m.requestResolver)
-	wsHandler := webhttp.NewWSHandler(
-		m.server.StreamHub(),
-		m.requestResolver,
-		websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }},
-	)
-	timelineHandler := webhttp.NewTimelineHandler(
-		m.server.TimelineService(),
-		log.With().Str("component", "inventory-chat").Str("route", "/api/apps/inventory/api/timeline").Logger(),
-	)
-
-	mux.HandleFunc("/chat", chatHandler)
-	mux.HandleFunc("/chat/", chatHandler)
-	mux.HandleFunc("/ws", wsHandler)
-	webhttp.RegisterProfileAPIHandlers(mux, m.profileRegistry, webhttp.ProfileAPIHandlerOptions{
-		DefaultRegistrySlug:             m.defaultRegistrySlug,
-		EnableCurrentProfileCookieRoute: true,
-		WriteActor:                      m.writeActor,
-		WriteSource:                     m.writeSource,
-		MiddlewareDefinitions:           m.middlewareDefinitions,
-		ExtensionSchemas:                append([]webhttp.ExtensionSchemaDocument(nil), m.extensionSchemas...),
-	})
-	mux.HandleFunc("/api/timeline", timelineHandler)
-	mux.HandleFunc("/api/timeline/", timelineHandler)
-	mux.Handle("/api/", m.server.APIHandler())
-	plzconfirmbackend.NewServer().Mount(mux, m.confirmMountPath)
-	mux.Handle("/", m.server.UIHandler())
-
-	return nil
+	return m.service.MountRoutes(mux)
 }
 
-func (m *InventoryBackendComponent) Init(context.Context) error {
-	if m == nil || m.server == nil {
+func (m *InventoryBackendComponent) Init(ctx context.Context) error {
+	if m == nil || m.service == nil {
 		return fmt.Errorf("inventory backend component is not initialized")
 	}
-	return nil
+	return m.service.Init(ctx)
 }
 
-func (m *InventoryBackendComponent) Start(context.Context) error {
-	if m == nil || m.server == nil {
+func (m *InventoryBackendComponent) Start(ctx context.Context) error {
+	if m == nil || m.service == nil {
 		return fmt.Errorf("inventory backend component is not initialized")
 	}
-	return nil
+	return m.service.Start(ctx)
 }
 
-func (m *InventoryBackendComponent) Stop(context.Context) error {
-	return nil
+func (m *InventoryBackendComponent) Stop(ctx context.Context) error {
+	if m == nil || m.service == nil {
+		return nil
+	}
+	return m.service.Stop(ctx)
 }
 
-func (m *InventoryBackendComponent) Health(context.Context) error {
-	if m == nil || m.server == nil {
+func (m *InventoryBackendComponent) Health(ctx context.Context) error {
+	if m == nil || m.service == nil {
 		return fmt.Errorf("inventory backend component server is not initialized")
 	}
-	return nil
+	return m.service.Health(ctx)
 }
