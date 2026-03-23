@@ -57,6 +57,9 @@ describe('inventory chat card projection', () => {
                       id: 'inventory-drilldown',
                       data: { sku: 'WA-100' },
                     },
+                    runtime: {
+                      pack: 'ui.card.v1',
+                    },
                     card: {
                       id: 'runtimeInventoryDrilldown',
                       code: '({ ui }) => ({ render() { return ui.text("inventory"); } })',
@@ -75,7 +78,7 @@ describe('inventory chat card projection', () => {
     const artifact = store.getState().hypercardArtifacts.byId['inventory-drilldown'];
     expect(artifact?.title).toBe('Inventory Drilldown');
     expect(artifact?.runtimeSurfaceId).toBe('runtimeInventoryDrilldown');
-    expect(artifact?.packId).toBeUndefined();
+    expect(artifact?.packId).toBe('ui.card.v1');
   });
 
   it('projects runtime.pack metadata for kanban.v1 cards into the inventory host store', async () => {

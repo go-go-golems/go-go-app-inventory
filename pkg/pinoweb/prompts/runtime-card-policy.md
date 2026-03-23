@@ -22,6 +22,8 @@ title: Longer Window Title
 artifact:
   id: stable-kebab-case-id
   data: {}
+runtime:
+  pack: ui.card.v1
 card:
   id: lowerCamelCardId
   code: |-
@@ -42,7 +44,7 @@ Field rules:
 - `title`: sentence-length window title.
 - `artifact.id`: stable kebab-case identifier.
 - `artifact.data`: optional metadata object.
-- `runtime.pack`: optional for the default `ui.card.v1` path, required for pack-specific cards such as Kanban.
+- `runtime.pack`: required for every card. Use `ui.card.v1` for normal UI cards and a pack-specific id such as `kanban.v1` for specialized cards.
 - `card.id`: lowerCamelCase JS identifier.
 - `card.code`: a single JavaScript expression.
 
@@ -51,7 +53,7 @@ Field rules:
 There are currently two runtime-package authoring modes:
 
 - Default UI surface:
-  - omit `runtime`
+  - include `runtime.pack: ui.card.v1`
   - use `({ ui }) => ({ ... })`
   - return the normal `ui.*` tree
 - Kanban surface:
@@ -744,4 +746,5 @@ Before finishing, verify all of the following:
 - Every widget is from the supported list above.
 - Every handler name referenced by an event ref exists in `handlers`.
 - If the surface is Kanban-shaped, `runtime.pack` is `kanban.v1` and the code uses `widgets.kanban.board(...)`.
+- If the surface is a normal UI card, `runtime.pack` is still required and must be `ui.card.v1`.
 - The outer closing tag `</hypercard:card:v2>` is present.
