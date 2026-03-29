@@ -4,7 +4,7 @@
 
 It owns both:
 - inventory backend/domain runtime
-- inventory frontend app package (`@hypercard/inventory`)
+- inventory frontend app package (`@go-go-golems/inventory`)
 
 ## What Lives Here
 
@@ -31,9 +31,9 @@ npm run typecheck
 
 Launcher composition should import inventory via package exports, not source internals.
 
-- `@hypercard/inventory`
-- `@hypercard/inventory/launcher`
-- `@hypercard/inventory/reducers`
+- `@go-go-golems/inventory`
+- `@go-go-golems/inventory/launcher`
+- `@go-go-golems/inventory/reducers`
 
 ## Backend Tests
 

@@ -3,9 +3,9 @@ import {
   chatSessionReducer,
   chatWindowReducer,
   timelineReducer,
-} from '@hypercard/chat-runtime';
-import { createAppStore } from '@hypercard/hypercard-runtime';
-import { confirmRuntimeReducer } from '@hypercard/confirm-runtime';
+} from '@go-go-golems/os-chat';
+import { createAppStore } from '@go-go-golems/os-scripting';
+import { confirmRuntimeReducer } from '@go-go-golems/os-confirm';
 import { inventoryReducer } from '../features/inventory/inventorySlice';
 import { salesReducer } from '../features/sales/salesSlice';
 

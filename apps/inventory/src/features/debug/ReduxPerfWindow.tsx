@@ -4,7 +4,7 @@ import {
   toggleDiagnosticsPause,
   useDiagnosticsSnapshot,
   type ActionRateHistory,
-} from '@hypercard/engine';
+} from '@go-go-golems/os-core';
 import { useCallback } from 'react';
 
 const WINDOW_OPTIONS = [1000, 3000, 5000, 10000];

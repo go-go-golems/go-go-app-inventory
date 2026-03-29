@@ -1,4 +1,4 @@
-import type { RuntimeSurfaceMeta, RuntimeBundleDefinition } from '@hypercard/engine';
+import type { RuntimeSurfaceMeta, RuntimeBundleDefinition } from '@go-go-golems/os-core';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META } from './vmmeta';
 

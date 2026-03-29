@@ -1,7 +1,7 @@
-import { formatAppKey, parseAppKey, type LaunchReason, type LauncherHostContext } from '@hypercard/desktop-os';
+import { formatAppKey, parseAppKey, type LaunchReason, type LauncherHostContext } from '@go-go-golems/os-shell';
 import {
   showToast,
-} from '@hypercard/engine';
+} from '@go-go-golems/os-core';
 import {
   ChatConversationWindow,
   ChatProfileSelector,
@@ -9,7 +9,7 @@ import {
   EventViewerWindow,
   TimelineDebugWindow,
   chatProfilesSlice,
-} from '@hypercard/chat-runtime';
+} from '@go-go-golems/os-chat';
 import {
   HypercardCardRenderer,
   RuntimeSurfaceSessionHost,
@@ -17,10 +17,10 @@ import {
   HYPERCARD_RUNTIME_DEBUG_APP_ID,
   registerRuntimePackage,
   registerRuntimeSurfaceType,
-} from '@hypercard/hypercard-runtime';
-import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@hypercard/kanban-runtime';
-import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@hypercard/ui-runtime';
-import { openWindow, type OpenWindowPayload, type WindowInstance } from '@hypercard/engine/desktop-core';
+} from '@go-go-golems/os-scripting';
+import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@go-go-golems/os-kanban';
+import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@go-go-golems/os-ui-cards';
+import { openWindow, type OpenWindowPayload, type WindowInstance } from '@go-go-golems/os-core/desktop-core';
 import {
   DesktopIconLayer,
   type DesktopActionEntry,
@@ -33,7 +33,7 @@ import {
   useOpenDesktopContextMenu,
   useRegisterWindowContextActions,
   useRegisterWindowMenuSections,
-} from '@hypercard/engine/desktop-react';
+} from '@go-go-golems/os-core/desktop-react';
 import { type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { STACK } from '../domain/stack';

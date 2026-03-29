@@ -1,5 +1,5 @@
-import type { LaunchableAppModule, LaunchReason } from '@hypercard/desktop-os';
-import type { OpenWindowPayload } from '@hypercard/engine/desktop-core';
+import type { LaunchableAppModule, LaunchReason } from '@go-go-golems/os-shell';
+import type { OpenWindowPayload } from '@go-go-golems/os-core/desktop-core';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { ReactNode } from 'react';
 import {

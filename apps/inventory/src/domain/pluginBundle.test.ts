@@ -5,8 +5,8 @@ import {
   clearRuntimeSurfaceTypes,
   registerRuntimePackage,
   registerRuntimeSurfaceType,
-} from '@hypercard/hypercard-runtime';
-import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@hypercard/ui-runtime';
+} from '@go-go-golems/os-scripting';
+import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@go-go-golems/os-ui-cards';
 import { INVENTORY_PLUGIN_BUNDLE } from './pluginBundle';
 import { INVENTORY_VM_CARD_META, INVENTORY_VM_PACK_METADATA } from './vmmeta';
 

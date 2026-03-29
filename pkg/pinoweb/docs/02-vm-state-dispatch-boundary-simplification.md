@@ -32,19 +32,19 @@ This document explains how to get there without throwing away the current runtim
 
 The current runtime boundary is spread across several places:
 
-- `packages/hypercard-runtime/src/plugin-runtime/stack-bootstrap.vm.js`
+- `packages/os-scripting/src/plugin-runtime/stack-bootstrap.vm.js`
   - `render(cardId, cardState, sessionState, globalState)` calls `card.render({ cardState, sessionState, globalState })`
   - `event(...)` exposes four dispatch functions into the VM
-- `packages/hypercard-runtime/src/plugin-runtime/contracts.ts`
+- `packages/os-scripting/src/plugin-runtime/contracts.ts`
   - worker request types explicitly carry `cardState`, `sessionState`, and `globalState`
   - runtime intent types are split into `card`, `session`, `domain`, and `system`
-- `packages/hypercard-runtime/src/runtime-host/PluginCardSessionHost.tsx`
+- `packages/os-scripting/src/runtime-host/PluginCardSessionHost.tsx`
   - host selects card-local and session-local state separately
   - host also builds a projected global object
-- `packages/hypercard-runtime/src/runtime-host/pluginIntentRouting.ts`
+- `packages/os-scripting/src/runtime-host/pluginIntentRouting.ts`
   - host decodes intent scope and routes it to local state, Redux domain actions,
     or system commands
-- `packages/hypercard-runtime/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts`
+- `packages/os-scripting/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts`
   - local runtime storage is split between `sessionState` and `cardState`
 - `apps/inventory/src/domain/pluginBundle.vm.js`
   - VM programs contain helper functions that know about `globalState.domains.inventory`,
@@ -65,48 +65,48 @@ This is exactly the kind of knowledge that should stay outside the sandbox.
 
 Use these files first when implementing the boundary refactor:
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/plugin-runtime/stack-bootstrap.vm.js:198-266`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/plugin-runtime/stack-bootstrap.vm.js:198-266`
   - current VM-facing render/event boundary
   - exposes `cardState`, `sessionState`, `globalState`
   - exposes the four scoped dispatch functions
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/plugin-runtime/contracts.ts:13-38`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/plugin-runtime/contracts.ts:13-38`
   - current `RuntimeIntent` union by scope
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/plugin-runtime/contracts.ts:59-79`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/plugin-runtime/contracts.ts:59-79`
   - worker request types that currently carry three state objects
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/plugin-runtime/runtimeService.ts:253-293`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/plugin-runtime/runtimeService.ts:253-293`
   - render/event calls that serialize the three-state boundary into QuickJS
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/runtime-host/PluginCardSessionHost.tsx:33-64`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/runtime-host/PluginCardSessionHost.tsx:33-64`
   - current `projectGlobalState()` helper
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/runtime-host/PluginCardSessionHost.tsx:91-97`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/runtime-host/PluginCardSessionHost.tsx:91-97`
   - current selectors for `sessionState`, `cardState`, and projected domains
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/runtime-host/PluginCardSessionHost.tsx:263-304`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/runtime-host/PluginCardSessionHost.tsx:263-304`
   - current render path that passes three state objects into the VM
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/runtime-host/PluginCardSessionHost.tsx:333-364`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/runtime-host/PluginCardSessionHost.tsx:333-364`
   - current event path that passes three state objects and receives scoped intents
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/runtime-host/pluginIntentRouting.ts:30-121`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/runtime-host/pluginIntentRouting.ts:30-121`
   - current host-side routing split between domain and system handling
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/features/pluginCardRuntime/selectors.ts:23-32`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/features/pluginCardRuntime/selectors.ts:23-32`
   - current card/session local state selectors
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/features/pluginCardRuntime/selectors.ts:45-64`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/features/pluginCardRuntime/selectors.ts:45-64`
   - current global/domain projection helper
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:47-62`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:47-62`
   - current runtime session storage shape
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:132-160`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:132-160`
   - current local state mutation semantics (`patch` / `set` / `reset`)
 
-- `workspace-links/go-go-os-frontend/packages/hypercard-runtime/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:235-309`
+- `workspace-links/go-go-os-frontend/packages/os-scripting/src/features/pluginCardRuntime/pluginCardRuntimeSlice.ts:235-309`
   - current ingest path branching by `card`, `session`, `domain`, and `system`
 
 - `workspace-links/go-go-app-inventory/apps/inventory/src/domain/pluginBundle.authoring.d.ts:46-57`

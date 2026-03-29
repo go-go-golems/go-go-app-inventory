@@ -1,10 +1,10 @@
-import { DesktopShell } from '@hypercard/engine/desktop-react';
+import { DesktopShell } from '@go-go-golems/os-core/desktop-react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { createInventoryStore } from '../store';
 import { STACK } from '../../domain/stack';
-import '@hypercard/engine/theme/classic.css';
-import '@hypercard/engine/theme/modern.css';
+import '@go-go-golems/os-core/theme/classic.css';
+import '@go-go-golems/os-core/theme/modern.css';
 
 function ThemedShell({ themeClass }: { themeClass?: string }) {
   return <DesktopShell bundle={STACK} themeClass={themeClass} />;

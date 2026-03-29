@@ -5,9 +5,9 @@ import { App } from './App';
 import { store } from './app/store';
 
 // Load engine base theme tokens
-import '@hypercard/engine/theme';
-import '@hypercard/chat-runtime/theme';
-import '@hypercard/kanban-runtime/theme';
+import '@go-go-golems/os-core/theme';
+import '@go-go-golems/os-chat/theme';
+import '@go-go-golems/os-kanban/theme';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

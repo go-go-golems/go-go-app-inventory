@@ -4,8 +4,8 @@ import {
   ensureChatModulesRegistered,
   handleSem,
   resetChatModulesRegistrationForTest,
-} from '@hypercard/chat-runtime';
-import { createAppStore } from '@hypercard/hypercard-runtime';
+} from '@go-go-golems/os-chat';
+import { createAppStore } from '@go-go-golems/os-scripting';
 import { inventoryReducer } from '../features/inventory/inventorySlice';
 import { salesReducer } from '../features/sales/salesSlice';
 import {
@@ -13,7 +13,7 @@ import {
   chatSessionReducer,
   chatWindowReducer,
   timelineReducer,
-} from '@hypercard/chat-runtime';
+} from '@go-go-golems/os-chat';
 
 const { createStore: createInventoryHostStore } = createAppStore({
   inventory: inventoryReducer,
