@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./host": "./src/host.ts",
     "./launcher": "./src/launcher/public.ts",
     "./reducers": "./src/reducers.ts"
   },
