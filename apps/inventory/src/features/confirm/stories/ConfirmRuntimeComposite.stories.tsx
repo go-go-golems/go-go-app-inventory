@@ -1,5 +1,5 @@
-import type { ConfirmRequest, SubmitResponsePayload, SubmitScriptEventPayload } from '@hypercard/confirm-runtime';
-import { ConfirmRequestWindowHost } from '@hypercard/confirm-runtime';
+import type { ConfirmRequest, SubmitResponsePayload, SubmitScriptEventPayload } from '@go-go-golems/os-confirm';
+import { ConfirmRequestWindowHost } from '@go-go-golems/os-confirm';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 

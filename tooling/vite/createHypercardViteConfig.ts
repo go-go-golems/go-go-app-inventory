@@ -44,13 +44,13 @@ export function createHypercardViteConfig(options: HypercardViteConfigOptions = 
     plugins: [react()],
     resolve: {
       alias: {
-        '@hypercard/engine': path.resolve(__dirname, '../../../go-go-os-frontend/packages/engine/src'),
-        '@hypercard/desktop-os': path.resolve(__dirname, '../../../go-go-os-frontend/packages/desktop-os/src'),
-        '@hypercard/chat-runtime': path.resolve(__dirname, '../../../go-go-os-frontend/packages/chat-runtime/src'),
-        '@hypercard/hypercard-runtime': path.resolve(__dirname, '../../../go-go-os-frontend/packages/hypercard-runtime/src'),
-        '@hypercard/kanban-runtime': path.resolve(__dirname, '../../../go-go-os-frontend/packages/kanban-runtime/src'),
-        '@hypercard/ui-runtime': path.resolve(__dirname, '../../../go-go-os-frontend/packages/ui-runtime/src'),
-        '@hypercard/confirm-runtime': path.resolve(__dirname, '../../../go-go-os-frontend/packages/confirm-runtime/src'),
+        '@go-go-golems/os-core': path.resolve(__dirname, '../../../go-go-os-frontend/packages/engine/src'),
+        '@go-go-golems/os-shell': path.resolve(__dirname, '../../../go-go-os-frontend/packages/desktop-os/src'),
+        '@go-go-golems/os-chat': path.resolve(__dirname, '../../../go-go-os-frontend/packages/chat-runtime/src'),
+        '@go-go-golems/os-scripting': path.resolve(__dirname, '../../../go-go-os-frontend/packages/hypercard-runtime/src'),
+        '@go-go-golems/os-kanban': path.resolve(__dirname, '../../../go-go-os-frontend/packages/kanban-runtime/src'),
+        '@go-go-golems/os-ui-cards': path.resolve(__dirname, '../../../go-go-os-frontend/packages/ui-runtime/src'),
+        '@go-go-golems/os-confirm': path.resolve(__dirname, '../../../go-go-os-frontend/packages/confirm-runtime/src'),
       },
     },
   } as {
