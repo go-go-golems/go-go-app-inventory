@@ -22,9 +22,9 @@ const config: StorybookConfig = {
     config_.resolve = config_.resolve || {};
     config_.resolve.alias = {
       ...config_.resolve.alias,
-      '@hypercard/engine': resolve(__dirname, '../go-go-os/packages/engine/src'),
-      '@hypercard/desktop-os': resolve(__dirname, '../go-go-os/packages/desktop-os/src'),
-      '@hypercard/confirm-runtime': resolve(__dirname, '../go-go-os/packages/confirm-runtime/src'),
+      '@go-go-golems/os-core': resolve(__dirname, '../go-go-os/packages/os-core/src'),
+      '@go-go-golems/os-shell': resolve(__dirname, '../go-go-os/packages/os-shell/src'),
+      '@go-go-golems/os-confirm': resolve(__dirname, '../go-go-os/packages/os-confirm/src'),
     };
     return config_;
   },
