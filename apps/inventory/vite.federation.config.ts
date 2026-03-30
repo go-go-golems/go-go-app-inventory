@@ -35,6 +35,9 @@ const frontendResolutionMode = resolveFrontendResolutionMode();
 
 export default defineConfig({
   plugins: [react(), emitFederationManifest()],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   resolve: {
     alias: resolveHypercardWorkspaceAliases(frontendResolutionMode),
   },
