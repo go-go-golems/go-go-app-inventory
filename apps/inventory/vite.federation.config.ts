@@ -32,6 +32,24 @@ function emitFederationManifest(): Plugin {
 }
 
 const frontendResolutionMode = resolveFrontendResolutionMode();
+const federationSharedAliases = [
+  {
+    find: /^react\/jsx-runtime$/,
+    replacement: path.resolve(__dirname, 'src/federation-shared/react-jsx-runtime.ts'),
+  },
+  {
+    find: /^react\/jsx-dev-runtime$/,
+    replacement: path.resolve(__dirname, 'src/federation-shared/react-jsx-runtime.ts'),
+  },
+  {
+    find: /^react-redux$/,
+    replacement: path.resolve(__dirname, 'src/federation-shared/react-redux.ts'),
+  },
+  {
+    find: /^react$/,
+    replacement: path.resolve(__dirname, 'src/federation-shared/react.ts'),
+  },
+] as const;
 
 export default defineConfig({
   plugins: [react(), emitFederationManifest()],
@@ -39,7 +57,13 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
   resolve: {
-    alias: resolveHypercardWorkspaceAliases(frontendResolutionMode),
+    alias: [
+      ...federationSharedAliases,
+      ...Object.entries(resolveHypercardWorkspaceAliases(frontendResolutionMode)).map(([find, replacement]) => ({
+        find,
+        replacement,
+      })),
+    ],
   },
   build: {
     target: 'es2022',
