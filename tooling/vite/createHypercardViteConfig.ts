@@ -42,7 +42,7 @@ function createInventoryProxy(target: string): Record<string, ProxyOptions> {
   };
 }
 
-function resolveFrontendResolutionMode(): FrontendResolutionMode {
+export function resolveFrontendResolutionMode(): FrontendResolutionMode {
   const configuredMode = process.env.GO_GO_OS_FRONTEND_RESOLUTION;
   if (configuredMode === 'workspace' || configuredMode === 'published') {
     return configuredMode;
@@ -52,20 +52,23 @@ function resolveFrontendResolutionMode(): FrontendResolutionMode {
   return existsSync(workspaceFrontendRoot) ? 'workspace' : 'published';
 }
 
+export function resolveHypercardWorkspaceAliases(frontendResolutionMode = resolveFrontendResolutionMode()) {
+  return frontendResolutionMode === 'workspace'
+    ? {
+        '@go-go-golems/os-core': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-core/src'),
+        '@go-go-golems/os-shell': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-shell/src'),
+        '@go-go-golems/os-chat': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-chat/src'),
+        '@go-go-golems/os-scripting': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-scripting/src'),
+        '@go-go-golems/os-kanban': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-kanban/src'),
+        '@go-go-golems/os-ui-cards': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-ui-cards/src'),
+        '@go-go-golems/os-confirm': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-confirm/src'),
+      }
+    : {};
+}
+
 export function createHypercardViteConfig(options: HypercardViteConfigOptions = {}) {
   const frontendResolutionMode = resolveFrontendResolutionMode();
-  const workspaceAliases =
-    frontendResolutionMode === 'workspace'
-      ? {
-          '@go-go-golems/os-core': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-core/src'),
-          '@go-go-golems/os-shell': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-shell/src'),
-          '@go-go-golems/os-chat': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-chat/src'),
-          '@go-go-golems/os-scripting': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-scripting/src'),
-          '@go-go-golems/os-kanban': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-kanban/src'),
-          '@go-go-golems/os-ui-cards': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-ui-cards/src'),
-          '@go-go-golems/os-confirm': path.resolve(__dirname, '../../../go-go-os-frontend/packages/os-confirm/src'),
-        }
-      : {};
+  const workspaceAliases = resolveHypercardWorkspaceAliases(frontendResolutionMode);
 
   const config = {
     plugins: [react()],
