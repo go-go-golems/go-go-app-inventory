@@ -21,6 +21,7 @@ on:
       - main
     paths:
       - apps/inventory/**
+      - deploy/**
       - tooling/vite/**
       - scripts/publish_federation_remote.py
       - .github/workflows/publish-federation-remote.yml
@@ -41,6 +42,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Checkout infra-tooling
+        uses: actions/checkout@v6
+        with:
+          repository: go-go-golems/infra-tooling
+          path: .infra-tooling
+
+      - name: Checkout GitOps repo for dry-run validation
+        uses: actions/checkout@v6
+        with:
+          repository: wesen/2026-03-27--hetzner-k3s
+          path: .gitops
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -166,6 +179,7 @@ jobs:
           INVENTORY_FEDERATION_PUBLIC_BASE_URL: ${{ vars.INVENTORY_FEDERATION_PUBLIC_BASE_URL }}
 
       - name: Publish federation artifact to object storage
+        id: publish
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_OBJECT_STORAGE_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_OBJECT_STORAGE_SECRET_ACCESS_KEY }}
@@ -189,6 +203,14 @@ jobs:
             --public-base-url "${INVENTORY_FEDERATION_PUBLIC_BASE_URL:-https://assets.example.invalid}" \
             "${args[@]}"
 
+      - name: Dry-run GitOps federation target update via infra-tooling
+        run: |
+          python3 .infra-tooling/scripts/federation/update_federation_gitops_target.py \
+            --config deploy/federation-gitops-targets.json \
+            --target wesen-os-inventory-prod \
+            --manifest-url "${{ steps.publish.outputs.manifest_url }}" \
+            --gitops-repo-dir .gitops
+
       - name: Publish summary
         run: |
           remote_version="${{ steps.version.outputs.remote_version }}"
@@ -200,6 +222,7 @@ jobs:
             echo "- remote_version: \`${remote_version}\`"
             echo "- manifest_url: \`${manifest_url}\`"
             echo "- dry_run: \`${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}\`"
+            echo "- gitops_dry_run_target: \`wesen-os-inventory-prod\`"
           } >> "$GITHUB_STEP_SUMMARY"
         env:
           INVENTORY_FEDERATION_PUBLIC_BASE_URL: ${{ vars.INVENTORY_FEDERATION_PUBLIC_BASE_URL || 'https://assets.example.invalid' }}
