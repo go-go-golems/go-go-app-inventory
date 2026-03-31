@@ -7,32 +7,7 @@
     "strict": true,
     "jsx": "react-jsx",
     "outDir": "dist",
-    "skipLibCheck": true,
-    "paths": {
-      "@go-go-golems/os-shell": ["../../../go-go-os-frontend/packages/os-shell/src"],
-      "@go-go-golems/os-shell/*": ["../../../go-go-os-frontend/packages/os-shell/src/*"],
-      "@go-go-golems/os-core": ["../../../go-go-os-frontend/packages/os-core/src"],
-      "@go-go-golems/os-core/*": ["../../../go-go-os-frontend/packages/os-core/src/*"],
-      "@go-go-golems/os-chat": ["../../../go-go-os-frontend/packages/os-chat/src"],
-      "@go-go-golems/os-chat/*": ["../../../go-go-os-frontend/packages/os-chat/src/*"],
-      "@go-go-golems/os-scripting": ["../../../go-go-os-frontend/packages/os-scripting/src"],
-      "@go-go-golems/os-scripting/*": ["../../../go-go-os-frontend/packages/os-scripting/src/*"],
-      "@go-go-golems/os-kanban": ["../../../go-go-os-frontend/packages/os-kanban/src"],
-      "@go-go-golems/os-kanban/*": ["../../../go-go-os-frontend/packages/os-kanban/src/*"],
-      "@go-go-golems/os-ui-cards": ["../../../go-go-os-frontend/packages/os-ui-cards/src"],
-      "@go-go-golems/os-ui-cards/*": ["../../../go-go-os-frontend/packages/os-ui-cards/src/*"],
-      "@go-go-golems/os-confirm": ["../../../go-go-os-frontend/packages/os-confirm/src"],
-      "@go-go-golems/os-confirm/*": ["../../../go-go-os-frontend/packages/os-confirm/src/*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../../../go-go-os-frontend/packages/os-shell" },
-    { "path": "../../../go-go-os-frontend/packages/os-core" },
-    { "path": "../../../go-go-os-frontend/packages/os-chat" },
-    { "path": "../../../go-go-os-frontend/packages/os-scripting" },
-    { "path": "../../../go-go-os-frontend/packages/os-kanban" },
-    { "path": "../../../go-go-os-frontend/packages/os-ui-cards" },
-    { "path": "../../../go-go-os-frontend/packages/os-confirm" }
-  ]
+  "include": ["src"]
 }
