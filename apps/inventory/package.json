@@ -5,17 +5,19 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./host": "./src/host.ts",
     "./launcher": "./src/launcher/public.ts",
     "./reducers": "./src/reducers.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "vmmeta:generate": "go run ../../../go-go-os-backend/cmd/go-go-os-backend vmmeta generate --pack-id ui.card.v1 --cards-dir src/domain/vm/cards --docs-dir src/domain/vm/docs --output-json src/domain/generated/inventory.vmmeta.json --output-ts src/domain/generated/inventoryVmmeta.generated.ts",
+    "vmmeta:generate": "../../scripts/generate_inventory_vmmeta.sh",
     "predev": "npm run vmmeta:generate",
     "dev": "vite",
     "prebuild": "npm run vmmeta:generate",
     "build": "npm run typecheck && vite build",
+    "build:federation": "npm run vmmeta:generate && vite build --config vite.federation.config.ts",
     "pretypecheck": "npm run vmmeta:generate",
     "typecheck": "node ../../../../node_modules/typescript/bin/tsc -b",
     "typecheck:published": "tsc --noEmit -p tsconfig.published.json",
