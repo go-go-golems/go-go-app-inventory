@@ -2,7 +2,7 @@
 
 ## Build Commands
 
-- Run a binary in XXX/YYY/FOOO: `go run ./XXX/YYY/FOOO` . Use this instead of build + ./XXX.
+- Run the inventory seeder directly with `go run ./cmd/inventory-seed`. Use this instead of build + `./dist/inventory-seed`.
 - Build: `go build ./...`
 - Test: `go test ./...`
 - Run single test: `go test ./pkg/path/to/package -run TestName`
