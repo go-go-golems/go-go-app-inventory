@@ -47,10 +47,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: go-go-golems/infra-tooling
-          # Temporary bridge: use the branch that contains the new
-          # federation GitOps PR helper until the corresponding infra-tooling
-          # PR lands on main.
-          ref: task/os-openai-app-server
           path: .infra-tooling
 
       - name: Checkout GitOps repo for dry-run validation
