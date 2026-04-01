@@ -1,12 +1,10 @@
-.PHONY: gifs
+.PHONY: gifs lint lintmax gosec govulncheck test build bump-glazed
 
 all: gifs
 
-VERSION=v0.1.14
-
-TAPES=$(shell ls doc/vhs/*tape)
+TAPES=$(wildcard doc/vhs/*.tape)
 gifs: $(TAPES)
-	for i in $(TAPES); do vhs < $$i; done
+	if [ -n "$(TAPES)" ]; then for i in $(TAPES); do vhs < $$i; done; fi
 
 docker-lint:
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:latest golangci-lint run -v
@@ -32,28 +30,7 @@ build:
 	go generate ./...
 	go build ./...
 
-goreleaser:
-	goreleaser release --skip=sign --snapshot --clean
-
-tag-major:
-	git tag $(shell svu major)
-
-tag-minor:
-	git tag $(shell svu minor)
-
-tag-patch:
-	git tag $(shell svu patch)
-
-release:
-	git push origin --tags
-	GOPROXY=proxy.golang.org go list -m github.com/go-go-golems/XXX@$(shell svu current)
-
 bump-glazed:
 	go get github.com/go-go-golems/glazed@latest
 	go get github.com/go-go-golems/clay@latest
 	go mod tidy
-
-XXX_BINARY=$(shell which XXX)
-install:
-	go build -o ./dist/XXX ./cmd/XXX && \
-		cp ./dist/XXX $(XXX_BINARY)
