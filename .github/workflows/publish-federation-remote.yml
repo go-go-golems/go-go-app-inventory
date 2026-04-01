@@ -54,6 +54,9 @@ jobs:
         with:
           repository: wesen/2026-03-27--hetzner-k3s
           path: .gitops
+          # Temporary: reuse the write-capable PR token for read access too.
+          # Follow-up: replace this with a dedicated read-only token such as K3S_REPO_READ_TOKEN.
+          token: ${{ secrets.GITOPS_PR_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v6
