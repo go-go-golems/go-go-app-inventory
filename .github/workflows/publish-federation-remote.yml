@@ -50,13 +50,12 @@ jobs:
           path: .infra-tooling
 
       - name: Checkout GitOps repo for dry-run validation
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         uses: actions/checkout@v6
         with:
           repository: wesen/2026-03-27--hetzner-k3s
           path: .gitops
-          # Temporary: reuse the write-capable PR token for read access too.
-          # Follow-up: replace this with a dedicated read-only token such as K3S_REPO_READ_TOKEN.
-          token: ${{ secrets.GITOPS_PR_TOKEN }}
+          token: ${{ secrets.K3S_REPO_READ_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -207,12 +206,26 @@ jobs:
             "${args[@]}"
 
       - name: Dry-run GitOps federation target update via infra-tooling
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
-          python3 .infra-tooling/scripts/federation/update_federation_gitops_target.py \
+          python3 .infra-tooling/scripts/federation/open_federation_gitops_pr.py \
             --config deploy/federation-gitops-targets.json \
             --target wesen-os-inventory-prod \
             --manifest-url "${{ steps.publish.outputs.manifest_url }}" \
-            --gitops-repo-dir .gitops
+            --gitops-repo-dir .gitops \
+            --dry-run
+
+      - name: Open GitOps PR via infra-tooling
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PR_TOKEN }}
+        run: |
+          python3 .infra-tooling/scripts/federation/open_federation_gitops_pr.py \
+            --config deploy/federation-gitops-targets.json \
+            --target wesen-os-inventory-prod \
+            --manifest-url "${{ steps.publish.outputs.manifest_url }}" \
+            --push \
+            --open-pr
 
       - name: Publish summary
         run: |
@@ -226,6 +239,7 @@ jobs:
             echo "- manifest_url: \`${manifest_url}\`"
             echo "- dry_run: \`${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}\`"
             echo "- gitops_dry_run_target: \`wesen-os-inventory-prod\`"
+            echo "- gitops_pr_mode: \`${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
         env:
           INVENTORY_FEDERATION_PUBLIC_BASE_URL: ${{ vars.INVENTORY_FEDERATION_PUBLIC_BASE_URL || 'https://assets.example.invalid' }}
