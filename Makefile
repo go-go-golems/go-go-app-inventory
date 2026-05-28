@@ -34,3 +34,11 @@ bump-glazed:
 	go get github.com/go-go-golems/glazed@latest
 	go get github.com/go-go-golems/clay@latest
 	go mod tidy
+
+.PHONY: logcopter-generate
+logcopter-generate:
+	GOWORK=off go tool logcopter-gen -include-main -var zlog -area-prefix go-go-golems.go-go-app-inventory -strip-prefix github.com/go-go-golems/go-go-app-inventory ./cmd/... ./pkg/...
+
+.PHONY: logcopter-check
+logcopter-check:
+	GOWORK=off go tool logcopter-gen -include-main -var zlog -area-prefix go-go-golems.go-go-app-inventory -strip-prefix github.com/go-go-golems/go-go-app-inventory -check ./cmd/... ./pkg/...
