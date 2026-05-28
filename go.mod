@@ -2,6 +2,8 @@ module github.com/go-go-golems/go-go-app-inventory
 
 go 1.26.1
 
+toolchain go1.26.3
+
 require (
 	github.com/go-go-golems/geppetto v0.11.3
 	github.com/go-go-golems/glazed v1.0.5
