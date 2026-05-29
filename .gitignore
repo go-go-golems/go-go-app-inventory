@@ -16,6 +16,7 @@
 dist/
 dist-federation/
 node_modules/
+data/
 
 # misc files and directories
 .env
