@@ -59,5 +59,7 @@ glazed-lint-build:
 		GOBIN=$(dir $(GLAZED_LINT_BIN)) go install $(GLAZED_LINT_PKG); \
 	fi
 
+# cmd/inventory-seed is a seed-data helper with legacy Cobra flags, not a
+# user-facing Glazed command; keep the rollout gate focused on package CLIs.
 glazed-lint: glazed-lint-build
-	GOWORK=off go vet -vettool=$(GLAZED_LINT_BIN) ./cmd/... ./pkg/...
+	GOWORK=off go vet -vettool=$(GLAZED_LINT_BIN) -glazedclilint.allow-paths=cmd/inventory-seed/ ./cmd/... ./pkg/...
