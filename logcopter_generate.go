@@ -1,0 +1,3 @@
+package inventory_seed
+
+//go:generate go tool logcopter-gen -include-main -var zlog -area-prefix go-go-golems.go-go-app-inventory -strip-prefix github.com/go-go-golems/go-go-app-inventory ./cmd/... ./pkg/...
