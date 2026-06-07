@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/go-go-golems/geppetto/pkg/events"
-	timelinepb "github.com/go-go-golems/pinocchio/pkg/sem/pb/proto/sem/timeline"
-	semregistry "github.com/go-go-golems/pinocchio/pkg/sem/registry"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
+	timelinepb "github.com/go-go-golems/go-go-os-chat/pkg/sem/pb/proto/sem/timeline"
+	semregistry "github.com/go-go-golems/go-go-os-chat/pkg/sem/registry"
+	webchat "github.com/go-go-golems/go-go-os-chat/pkg/webchat"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"

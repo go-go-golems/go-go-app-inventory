@@ -9,8 +9,8 @@ import (
 	"github.com/go-go-golems/go-go-app-inventory/pkg/backendcomponent"
 	"github.com/go-go-golems/go-go-os-backend/pkg/backendhost"
 	"github.com/go-go-golems/go-go-os-backend/pkg/docmw"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
-	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
+	webchat "github.com/go-go-golems/go-go-os-chat/pkg/webchat"
+	webhttp "github.com/go-go-golems/go-go-os-chat/pkg/webchat/http"
 	"github.com/pkg/errors"
 )
 

@@ -63,3 +63,16 @@ glazed-lint-build:
 # user-facing Glazed command; keep the rollout gate focused on package CLIs.
 glazed-lint: glazed-lint-build
 	GOWORK=off go vet -vettool=$(GLAZED_LINT_BIN) -glazedclilint.allow-paths=cmd/inventory-seed/ ./cmd/... ./pkg/...
+
+.PHONY: bump-go-go-golems
+bump-go-go-golems:
+	@deps="$$(awk '/^require[[:space:]]+github\.com\/go-go-golems\// { print $$2 } /^[[:space:]]*github\.com\/go-go-golems\// { print $$1 }' go.mod | sort -u)"; \
+	if [ -z "$$deps" ]; then \
+		echo "No github.com/go-go-golems dependencies in go.mod"; \
+	else \
+		echo "Bumping go-go-golems dependencies:"; \
+		echo "$$deps"; \
+		for dep in $$deps; do GOWORK=off go get "$${dep}@latest"; done; \
+	fi
+	GOWORK=off go mod tidy
+

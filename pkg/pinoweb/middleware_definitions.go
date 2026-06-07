@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-go-golems/geppetto/pkg/inference/middleware"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	infruntime "github.com/go-go-golems/pinocchio/pkg/inference/runtime"
+	infruntime "github.com/go-go-golems/go-go-os-chat/pkg/inference/runtime"
 )
 
 type inventoryMiddlewareDefinition struct {

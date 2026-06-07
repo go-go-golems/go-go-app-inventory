@@ -9,8 +9,8 @@ import (
 	"github.com/go-go-golems/geppetto/pkg/events"
 	"github.com/go-go-golems/geppetto/pkg/events/structuredsink"
 	"github.com/go-go-golems/geppetto/pkg/events/structuredsink/parsehelpers"
-	infruntime "github.com/go-go-golems/pinocchio/pkg/inference/runtime"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
+	infruntime "github.com/go-go-golems/go-go-os-chat/pkg/inference/runtime"
+	webchat "github.com/go-go-golems/go-go-os-chat/pkg/webchat"
 	"github.com/pkg/errors"
 )
 

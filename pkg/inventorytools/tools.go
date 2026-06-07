@@ -6,7 +6,7 @@ import (
 	"time"
 
 	geptools "github.com/go-go-golems/geppetto/pkg/inference/tools"
-	infruntime "github.com/go-go-golems/pinocchio/pkg/inference/runtime"
+	infruntime "github.com/go-go-golems/go-go-os-chat/pkg/inference/runtime"
 	"github.com/pkg/errors"
 
 	"github.com/go-go-golems/go-go-app-inventory/pkg/inventorydb"
