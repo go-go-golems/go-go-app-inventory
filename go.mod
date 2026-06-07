@@ -1,6 +1,6 @@
 module github.com/go-go-golems/go-go-app-inventory
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/go-go-golems/geppetto v0.13.3
