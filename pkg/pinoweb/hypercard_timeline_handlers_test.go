@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	chatstore "github.com/go-go-golems/pinocchio/pkg/persistence/chatstore"
-	timelinepb "github.com/go-go-golems/pinocchio/pkg/sem/pb/proto/sem/timeline"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
+	chatstore "github.com/go-go-golems/go-go-os-chat/pkg/persistence/chatstore"
+	timelinepb "github.com/go-go-golems/go-go-os-chat/pkg/sem/pb/proto/sem/timeline"
+	webchat "github.com/go-go-golems/go-go-os-chat/pkg/webchat"
 	"github.com/stretchr/testify/require"
 )
 

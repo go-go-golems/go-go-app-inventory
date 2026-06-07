@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
+	infruntime "github.com/go-go-golems/go-go-os-chat/pkg/inference/runtime"
 	profilechat "github.com/go-go-golems/go-go-os-chat/pkg/profilechat"
-	infruntime "github.com/go-go-golems/pinocchio/pkg/inference/runtime"
 )
 
 type RuntimeComposerOptions = profilechat.RuntimeComposerOptions

@@ -64,7 +64,7 @@ func TestWidgetExtractor_TitleGatedStartThenReady(t *testing.T) {
 
 	meta := events.EventMetadata{ID: uuid.New()}
 	chunk1 := "<hypercard:widget:v1>\n```yaml\ntype: report\n"
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk1, chunk1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk1, chunk1, 1)))
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardWidgetStart))
 
 	full := chunk1 +
@@ -76,10 +76,10 @@ func TestWidgetExtractor_TitleGatedStartThenReady(t *testing.T) {
 		"```\n" +
 		"</hypercard:widget:v1>"
 	chunk2 := strings.TrimPrefix(full, chunk1)
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk2, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk2, full, 1)))
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardWidgetStart))
 
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardWidgetV1))
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardWidgetError))
 }
@@ -94,8 +94,8 @@ func TestWidgetExtractor_MalformedBlockEmitsError(t *testing.T) {
 
 	meta := events.EventMetadata{ID: uuid.New()}
 	full := "<hypercard:widget:v1>\n```yaml\ntype: report\ntitle: Broken\n"
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardWidgetError), 1)
 }
@@ -129,8 +129,8 @@ func TestRuntimeCardExtractor_ValidPayload(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardStart), 1)
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardCardV2))
@@ -171,8 +171,8 @@ func TestRuntimeCardExtractor_PreservesRuntimePackMetadata(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardCardV2))
 	cardReady := firstRuntimeCardReadyEvent(col.events)
@@ -204,8 +204,8 @@ func TestRuntimeCardExtractor_MissingCardCode(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
@@ -241,8 +241,8 @@ func TestRuntimeCardExtractor_MissingCardId(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
@@ -280,8 +280,8 @@ func TestRuntimeCardExtractor_EmptyRuntimePack(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardError), 1)
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardV2))
@@ -310,8 +310,8 @@ func TestRuntimeCardExtractor_MalformedBlockIncludesRawPayload(t *testing.T) {
 		"card:\n" +
 		"  id: brokenCard\n"
 
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, full, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, full, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	cardErr := firstRuntimeCardErrorEvent(col.events)
 	require.NotNil(t, cardErr)
@@ -331,7 +331,7 @@ func TestRuntimeCardExtractor_StreamingName(t *testing.T) {
 	meta := events.EventMetadata{ID: uuid.New()}
 	// First chunk: just name and title, no code yet
 	chunk1 := "<hypercard:card:v2>\n```yaml\nname: Low Stock Items\ntitle: Items Below Threshold\n"
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk1, chunk1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk1, chunk1, 1)))
 	// Name should be available, so card.start should fire
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardCardStart), 1)
 
@@ -349,8 +349,8 @@ func TestRuntimeCardExtractor_StreamingName(t *testing.T) {
 		"```\n" +
 		"</hypercard:card:v2>"
 	chunk2 := strings.TrimPrefix(full, chunk1)
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk2, full)))
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk2, full, 1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardCardV2))
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardCardError))
@@ -366,7 +366,7 @@ func TestSuggestionsExtractor_ProgressiveStartUpdateReady(t *testing.T) {
 
 	meta := events.EventMetadata{ID: uuid.New()}
 	chunk1 := "<hypercard:suggestions:v1>\n```yaml\nsuggestions:\n  - Show current inventory status\n"
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk1, chunk1)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk1, chunk1, 1)))
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardSuggestionsStart))
 
 	full := chunk1 +
@@ -375,10 +375,10 @@ func TestSuggestionsExtractor_ProgressiveStartUpdateReady(t *testing.T) {
 		"```\n" +
 		"</hypercard:suggestions:v1>"
 	chunk2 := strings.TrimPrefix(full, chunk1)
-	require.NoError(t, sink.PublishEvent(events.NewPartialCompletionEvent(meta, chunk2, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextDeltaEvent(meta, events.Correlation{}, chunk2, full, 1)))
 	require.GreaterOrEqual(t, countEventsByType(col.events, eventTypeHypercardSuggestionsUpdate), 1)
 
-	require.NoError(t, sink.PublishEvent(events.NewFinalEvent(meta, full)))
+	require.NoError(t, sink.PublishEvent(events.NewTextSegmentFinishedEvent(meta, events.Correlation{}, full, "stop")))
 	require.Equal(t, 1, countEventsByType(col.events, eventTypeHypercardSuggestionsV1))
 	require.Equal(t, 0, countEventsByType(col.events, eventTypeHypercardSuggestionsError))
 }

@@ -8,8 +8,8 @@ import (
 	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
 	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
 	chatservice "github.com/go-go-golems/go-go-os-chat/pkg/chatservice"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
-	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
+	webchat "github.com/go-go-golems/go-go-os-chat/pkg/webchat"
+	webhttp "github.com/go-go-golems/go-go-os-chat/pkg/webchat/http"
 )
 
 const AppID = "inventory"
