@@ -18,14 +18,10 @@ func (s *stubComponent) Manifest() backendcomponent.AppManifest {
 	return backendcomponent.AppManifest{
 		AppID:       AppID,
 		Name:        "Inventory",
-		Description: "Inventory chat runtime, profiles, timeline, and confirm APIs",
+		Description: "Inventory chat runtime and docs APIs",
 		Required:    true,
 		Capabilities: []string{
-			"chat",
-			"ws",
-			"timeline",
-			"profiles",
-			"confirm",
+			"docs",
 		},
 	}
 }
@@ -43,7 +39,7 @@ func TestManifestContract(t *testing.T) {
 	require.Equal(t, AppID, manifest.AppID)
 	require.Equal(t, "Inventory", manifest.Name)
 	require.True(t, manifest.Required)
-	require.ElementsMatch(t, []string{"chat", "ws", "timeline", "profiles", "confirm"}, manifest.Capabilities)
+	require.ElementsMatch(t, []string{"docs"}, manifest.Capabilities)
 }
 
 func TestReflectionContract(t *testing.T) {
@@ -62,12 +58,12 @@ func TestReflectionContract(t *testing.T) {
 		apiByID[api.ID] = true
 		require.Contains(t, api.Path, "/api/apps/inventory/")
 	}
-	require.True(t, apiByID["chat-start"])
+	require.True(t, apiByID["chat-session-create"])
+	require.True(t, apiByID["chat-message-submit"])
+	require.True(t, apiByID["chat-session-snapshot"])
+	require.True(t, apiByID["chat-session-stop"])
+	require.True(t, apiByID["chat-tools-manifest"])
 	require.True(t, apiByID["ws-events"])
-	require.True(t, apiByID["timeline-get"])
-	require.True(t, apiByID["profiles-list"])
-	require.True(t, apiByID["profile-current"])
-	require.True(t, apiByID["confirm-api"])
 	require.True(t, apiByID["docs-list"])
 	require.True(t, apiByID["docs-get"])
 }
@@ -75,9 +71,9 @@ func TestReflectionContract(t *testing.T) {
 func TestLifecycleDelegationBehavior(t *testing.T) {
 	module := NewModule(Options{})
 
-	require.Error(t, module.Init(context.Background()))
-	require.Error(t, module.Start(context.Background()))
-	require.Error(t, module.Health(context.Background()))
+	require.NoError(t, module.Init(context.Background()))
+	require.NoError(t, module.Start(context.Background()))
+	require.NoError(t, module.Health(context.Background()))
 	require.NoError(t, module.Stop(context.Background()))
 }
 
@@ -85,7 +81,7 @@ func TestMountRoutesValidatesDependencies(t *testing.T) {
 	module := NewModule(Options{})
 
 	require.Error(t, module.MountRoutes(nil))
-	require.Error(t, module.MountRoutes(http.NewServeMux()))
+	require.NoError(t, module.MountRoutes(http.NewServeMux()))
 }
 
 func TestDocStoreContract(t *testing.T) {

@@ -4,19 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
-	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
-	chatservice "github.com/go-go-golems/go-go-os-chat/pkg/chatservice"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
-	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
 )
 
 const AppID = "inventory"
-
-const (
-	defaultConfirmMountPath = "/confirm"
-)
 
 type AppManifest struct {
 	AppID        string
@@ -35,58 +25,43 @@ type Component interface {
 	Health(ctx context.Context) error
 }
 
+// ChatRoutes mounts a chat backend under the inventory app namespace. The
+// composition host owns the chat runtime (pinocchio chatapp/sessionstream);
+// this component no longer builds one itself. The legacy pinocchio
+// pkg/webchat + chatservice wiring was removed when pinocchio deleted those
+// packages (WESEN-OS-STOCKTAKE-2026-07 Decision D3).
+type ChatRoutes func(mux *http.ServeMux) error
+
 type Options struct {
-	Server                *webchat.Server
-	RequestResolver       webhttp.ConversationRequestResolver
-	ProfileRegistry       gepprofiles.Registry
-	DefaultRegistrySlug   gepprofiles.RegistrySlug
-	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	ConfirmMountPath      string
+	// Chat optionally mounts the host-owned chat routes for this app.
+	Chat ChatRoutes
+	// ChatStop optionally releases the host-owned chat runtime on Stop.
+	ChatStop func(ctx context.Context) error
 }
 
 type InventoryBackendComponent struct {
-	service         *chatservice.Component
-	profileRegistry gepprofiles.Registry
+	chat     ChatRoutes
+	chatStop func(ctx context.Context) error
 }
 
 func NewInventoryBackendComponent(opts Options) *InventoryBackendComponent {
-	registrySlug := opts.DefaultRegistrySlug
-	if registrySlug.IsZero() {
-		registrySlug = gepprofiles.MustRegistrySlug("default")
-	}
-	confirmMountPath := opts.ConfirmMountPath
-	if confirmMountPath == "" {
-		confirmMountPath = defaultConfirmMountPath
-	}
 	return &InventoryBackendComponent{
-		service: chatservice.New(chatservice.Options{
-			Server:          opts.Server,
-			RequestResolver: opts.RequestResolver,
-			ProfileAPI: &chatservice.ProfileAPIOptions{
-				Registry:                        opts.ProfileRegistry,
-				DefaultRegistrySlug:             registrySlug,
-				MiddlewareDefinitions:           opts.MiddlewareDefinitions,
-				EnableCurrentProfileCookieRoute: false,
-			},
-			ConfirmMountPath: confirmMountPath,
-		}),
-		profileRegistry: opts.ProfileRegistry,
+		chat:     opts.Chat,
+		chatStop: opts.ChatStop,
 	}
 }
 
 func (m *InventoryBackendComponent) Manifest() AppManifest {
+	capabilities := []string{"docs"}
+	if m != nil && m.chat != nil {
+		capabilities = append(capabilities, "chat", "chat-sessions", "ws", "frontend-tools", "profiles")
+	}
 	return AppManifest{
-		AppID:       AppID,
-		Name:        "Inventory",
-		Description: "Inventory chat runtime, profiles, timeline, and confirm APIs",
-		Required:    true,
-		Capabilities: []string{
-			"chat",
-			"ws",
-			"timeline",
-			"profiles",
-			"confirm",
-		},
+		AppID:        AppID,
+		Name:         "Inventory",
+		Description:  "Inventory chat runtime and docs APIs",
+		Required:     true,
+		Capabilities: capabilities,
 	}
 }
 
@@ -94,36 +69,36 @@ func (m *InventoryBackendComponent) MountRoutes(mux *http.ServeMux) error {
 	if mux == nil {
 		return fmt.Errorf("inventory backend component mount mux is nil")
 	}
-	if m.profileRegistry == nil {
-		return fmt.Errorf("inventory backend component profile registry is nil")
+	if m == nil || m.chat == nil {
+		return nil
 	}
-	return m.service.MountRoutes(mux)
+	return m.chat(mux)
 }
 
 func (m *InventoryBackendComponent) Init(ctx context.Context) error {
-	if m == nil || m.service == nil {
+	if m == nil {
 		return fmt.Errorf("inventory backend component is not initialized")
 	}
-	return m.service.Init(ctx)
+	return nil
 }
 
 func (m *InventoryBackendComponent) Start(ctx context.Context) error {
-	if m == nil || m.service == nil {
+	if m == nil {
 		return fmt.Errorf("inventory backend component is not initialized")
 	}
-	return m.service.Start(ctx)
+	return nil
 }
 
 func (m *InventoryBackendComponent) Stop(ctx context.Context) error {
-	if m == nil || m.service == nil {
+	if m == nil || m.chatStop == nil {
 		return nil
 	}
-	return m.service.Stop(ctx)
+	return m.chatStop(ctx)
 }
 
 func (m *InventoryBackendComponent) Health(ctx context.Context) error {
-	if m == nil || m.service == nil {
-		return fmt.Errorf("inventory backend component server is not initialized")
+	if m == nil {
+		return fmt.Errorf("inventory backend component is not initialized")
 	}
-	return m.service.Health(ctx)
+	return nil
 }

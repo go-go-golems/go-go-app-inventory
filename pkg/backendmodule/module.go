@@ -4,20 +4,18 @@ import (
 	"context"
 	"net/http"
 
-	gepprofiles "github.com/go-go-golems/geppetto/pkg/engineprofiles"
-	"github.com/go-go-golems/geppetto/pkg/inference/middlewarecfg"
 	"github.com/go-go-golems/go-go-app-inventory/pkg/backendcomponent"
 	"github.com/go-go-golems/go-go-os-backend/pkg/backendhost"
 	"github.com/go-go-golems/go-go-os-backend/pkg/docmw"
-	webchat "github.com/go-go-golems/pinocchio/pkg/webchat"
-	webhttp "github.com/go-go-golems/pinocchio/pkg/webchat/http"
 	"github.com/pkg/errors"
 )
 
 const AppID = backendcomponent.AppID
 
 // Module adapts the inventory backend component to the shared backendhost
-// contract used by composition runtimes.
+// contract used by composition runtimes. The chat runtime itself is owned by
+// the composition host and injected via Options.Chat (chatapp/sessionstream);
+// the legacy pinocchio webchat wiring was removed with pinocchio v0.11.
 type Module struct {
 	component backendcomponent.Component
 	docStore  *docmw.DocStore
@@ -25,12 +23,10 @@ type Module struct {
 }
 
 type Options struct {
-	Server                *webchat.Server
-	RequestResolver       webhttp.ConversationRequestResolver
-	ProfileRegistry       gepprofiles.Registry
-	DefaultRegistrySlug   gepprofiles.RegistrySlug
-	MiddlewareDefinitions middlewarecfg.DefinitionRegistry
-	ConfirmMountPath      string
+	// Chat mounts the host-owned chat routes under the app namespace.
+	Chat backendcomponent.ChatRoutes
+	// ChatStop releases the host-owned chat runtime when the module stops.
+	ChatStop func(ctx context.Context) error
 }
 
 var _ backendhost.AppBackendModule = (*Module)(nil)
@@ -39,12 +35,8 @@ var _ backendhost.DocumentableAppBackendModule = (*Module)(nil)
 
 func NewModule(opts Options) *Module {
 	componentOpts := backendcomponent.Options{
-		Server:                opts.Server,
-		RequestResolver:       opts.RequestResolver,
-		ProfileRegistry:       opts.ProfileRegistry,
-		DefaultRegistrySlug:   opts.DefaultRegistrySlug,
-		MiddlewareDefinitions: opts.MiddlewareDefinitions,
-		ConfirmMountPath:      opts.ConfirmMountPath,
+		Chat:     opts.Chat,
+		ChatStop: opts.ChatStop,
 	}
 	docStore, docErr := loadDocStore()
 	return &Module{
