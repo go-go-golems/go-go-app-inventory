@@ -5,14 +5,18 @@
  * publishes a ChatWidgetInstance with widgetName "inventory.codeCard" and
  * props { title, name, artifact:{id,data}, runtime:{pack}, card:{id,code} }.
  *
- * This widget is the old-chat "proposal card" (HypercardCardRenderer parity):
- * it does NOT execute inline. On mount it registers the card's code into the
- * os-scripting runtimeSurfaceRegistry (`registerRuntimeSurface(card.id, code,
- * pack)`) — replacing the dead os-chat artifactProjectionMiddleware — so any
- * live RuntimeSurfaceSessionHost live-injects it and later-opened surface
- * windows inject it during ensureSession. "Open" launches the surface window
- * through the existing createInventoryCardAdapter path; the card also becomes
- * visible in the Stacks & Cards manager via the generated-cards section.
+ * The widget is a compact launcher chip — it does NOT show the generated
+ * code (raw code in chat is noise; the message text's block is stripped by
+ * InventoryChatMessages). Actions: ▶ Open executes the card as a surface
+ * window via the existing createInventoryCardAdapter path; ✏️ Edit opens the
+ * code in the runtime-surface code editor (same flow as Stacks & Cards'
+ * registry section).
+ *
+ * On mount it registers the card's code into the os-scripting
+ * runtimeSurfaceRegistry (`registerRuntimeSurface(card.id, code, pack)`) —
+ * replacing the dead os-chat artifactProjectionMiddleware — so any live
+ * RuntimeSurfaceSessionHost live-injects it and later-opened surface windows
+ * inject it during ensureSession.
  *
  * ChatProvider's Redux Provider uses an isolated context (ChatReduxContext),
  * so useDispatch() here still binds to the DESKTOP store — openWindow works.
@@ -21,7 +25,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { defineWidget, type WidgetProps } from '@go-go-golems/chat-provider';
 import { openWindow } from '@go-go-golems/os-core/desktop-core';
-import { buildArtifactOpenWindowPayload, registerRuntimeSurface } from '@go-go-golems/os-scripting';
+import { buildArtifactOpenWindowPayload, openCodeEditor, registerRuntimeSurface } from '@go-go-golems/os-scripting';
 
 interface CodeCardProps {
   title?: string;
@@ -34,7 +38,6 @@ interface CodeCardProps {
 function InventoryCodeCard({ props, status }: WidgetProps) {
   const dispatch = useDispatch();
   const card = (props ?? {}) as CodeCardProps;
-  const [codeExpanded, setCodeExpanded] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
   const surfaceId = card.card?.id?.trim() ?? '';
@@ -77,34 +80,30 @@ function InventoryCodeCard({ props, status }: WidgetProps) {
     }
   }, [dispatch, openPayload]);
 
+  const editCode = useCallback(() => {
+    if (surfaceId && code) {
+      openCodeEditor(dispatch, { ownerAppId: 'inventory', surfaceId }, code, pack || undefined);
+    }
+  }, [dispatch, surfaceId, code, pack]);
+
   const valid = Boolean(surfaceId && code && pack);
-  const codeLines = code.split('\n');
-  const preview = codeExpanded ? code : codeLines.slice(0, 8).join('\n') + (codeLines.length > 8 ? '\n…' : '');
 
   return (
     <div className="inventory-card inventory-code-card" data-part="inventory-code-card" data-status={status}>
-      <div className="inventory-card-header">
-        <span className="inventory-card-title">🃏 {displayName}</span>
-        <span className="inventory-card-subtitle">
-          {pack ? `runtime: ${pack}` : 'runtime: —'}
-          {surfaceId ? ` · card: ${surfaceId}` : ''}
-        </span>
-      </div>
-      <div className="inventory-code-card-body">
-        <pre className="inventory-code-card-code" data-expanded={codeExpanded}>{preview}</pre>
-        {codeLines.length > 8 ? (
-          <button type="button" className="inventory-code-card-toggle" onClick={() => setCodeExpanded((v) => !v)}>
-            {codeExpanded ? '▲ collapse' : `▼ show all ${codeLines.length} lines`}
-          </button>
-        ) : null}
-      </div>
-      <div className="inventory-card-footer inventory-code-card-actions">
+      <div className="inventory-code-card-row">
+        <span className="inventory-code-card-icon" aria-hidden>🃏</span>
+        <span className="inventory-code-card-name" title={windowTitle}>{displayName}</span>
+        <span className="inventory-code-card-pack">{pack || '—'}</span>
+        <span className="inventory-code-card-spacer" />
         <button type="button" className="inventory-code-card-open" disabled={!valid || !openPayload} onClick={openSurface}>
           ▶ Open
         </button>
-        {registerError ? <span className="inventory-code-card-error">register failed: {registerError}</span> : null}
-        {!valid ? <span className="inventory-code-card-error">incomplete card (needs card.id, card.code, runtime.pack)</span> : null}
+        <button type="button" className="inventory-code-card-edit" disabled={!surfaceId || !code} onClick={editCode}>
+          ✏️ Edit
+        </button>
       </div>
+      {registerError ? <div className="inventory-code-card-error">register failed: {registerError}</div> : null}
+      {!valid ? <div className="inventory-code-card-error">incomplete card (needs card.id, card.code, runtime.pack)</div> : null}
     </div>
   );
 }

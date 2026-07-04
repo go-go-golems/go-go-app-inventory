@@ -23,7 +23,8 @@ import {
   type ChatProviderConfig,
   type WidgetDefinition,
 } from '@go-go-golems/chat-provider';
-import { ChatMessages, ChatComposer, useStickyScrollFollow } from '@go-go-golems/chat-overlay';
+import { ChatComposer, useStickyScrollFollow } from '@go-go-golems/chat-overlay';
+import { InventoryChatMessages } from './InventoryChatMessages';
 import { inventoryChatDebugStore } from './inventoryChatDebugStore';
 import { useInventoryChatDebugEvents } from './useInventoryChatDebugEvents';
 import { useInventoryProfiles } from './useInventoryProfiles';
@@ -216,7 +217,7 @@ function InventoryChatChrome({
         onWheel={scroll.onWheel}
         className="chat-overlay-messages-scroll"
       >
-        {isEmpty ? <InventoryEmptyState /> : <ChatMessages bottomRef={scroll.tailRef} />}
+        {isEmpty ? <InventoryEmptyState /> : <InventoryChatMessages bottomRef={scroll.tailRef} />}
       </div>
 
       {isEmpty && starterSuggestions.length > 0 ? (
