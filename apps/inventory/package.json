@@ -36,6 +36,8 @@
     "@codemirror/view": "^6.39.14",
     "@go-go-golems/os-confirm": "workspace:*",
     "@reduxjs/toolkit": "^2.5.0",
+    "@go-go-golems/chat-provider": "^0.2.1",
+    "@go-go-golems/chat-overlay": "^0.2.1",
     "@go-go-golems/os-chat": "workspace:*",
     "@go-go-golems/os-core": "workspace:*",
     "@go-go-golems/os-kanban": "workspace:*",
