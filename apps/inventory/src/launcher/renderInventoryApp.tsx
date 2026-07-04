@@ -11,6 +11,9 @@ import {
 } from '@go-go-golems/os-scripting';
 import { InventoryChatWindow } from './chat/InventoryChatWindow';
 import { InventoryEventViewerWindow, InventoryTimelineDebugWindow } from './chat/InventoryDebugWindows';
+import { inventoryCardWidget } from './chat/inventoryCardWidget';
+
+const INVENTORY_CHAT_WIDGETS = [inventoryCardWidget];
 import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@go-go-golems/os-kanban';
 import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@go-go-golems/os-ui-cards';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@go-go-golems/os-core/desktop-core';
@@ -844,6 +847,7 @@ function InventoryChatAssistantWindow({
       convId={convId}
       apiBasePrefix={apiBasePrefix}
       starterSuggestions={INVENTORY_STARTER_SUGGESTIONS}
+      widgets={INVENTORY_CHAT_WIDGETS}
       onOpenEventViewer={openEventViewer}
       onOpenTimelineDebug={openTimelineDebug}
     />

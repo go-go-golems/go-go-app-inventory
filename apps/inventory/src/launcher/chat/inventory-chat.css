@@ -323,6 +323,74 @@
   margin: 0;
 }
 
+/* --- Generated inventory card widget ----------------------------------- */
+
+.inventory-card {
+  border: 2px solid var(--color-mac-black);
+  border-radius: var(--hc-border-radius, 0);
+  background: var(--color-mac-white);
+  margin: 6px 0;
+  font-family: var(--inv-font-sans);
+}
+
+.inventory-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-mac-black);
+  background: var(--color-mac-gray-5);
+}
+
+.inventory-card-title {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.inventory-card-subtitle {
+  font-size: 10px;
+  color: var(--color-mac-gray-2);
+}
+
+.inventory-card-fields {
+  margin: 0;
+  padding: 6px 8px;
+  display: grid;
+  gap: 2px;
+}
+
+.inventory-card-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.inventory-card-field dt {
+  color: var(--color-mac-gray-2);
+  margin: 0;
+}
+
+.inventory-card-field dd {
+  margin: 0;
+  font-weight: bold;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.inventory-card-footer {
+  padding: 3px 8px;
+  border-top: 1px solid var(--color-mac-gray-4);
+  font-size: 10px;
+  color: var(--color-mac-gray-2);
+}
+
+.inventory-card[data-status="WIDGET_STATUS_ERROR"],
+.inventory-card[data-status="error"] {
+  border-color: var(--color-mac-black);
+  opacity: 0.6;
+}
+
 /* --- Tailwind utility fallbacks (scoped) - mirror assistant CSS --------- */
 
 .inventory-chat-window .space-y-2 > * + * { margin-top: 8px; }
