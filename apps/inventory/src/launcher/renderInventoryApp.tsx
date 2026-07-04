@@ -12,8 +12,9 @@ import {
 import { InventoryChatWindow } from './chat/InventoryChatWindow';
 import { InventoryEventViewerWindow, InventoryTimelineDebugWindow } from './chat/InventoryDebugWindows';
 import { inventoryCardWidget } from './chat/inventoryCardWidget';
+import { inventoryCodeCardWidget } from './chat/inventoryCodeCardWidget';
 
-const INVENTORY_CHAT_WIDGETS = [inventoryCardWidget];
+const INVENTORY_CHAT_WIDGETS = [inventoryCardWidget, inventoryCodeCardWidget];
 import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@go-go-golems/os-kanban';
 import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@go-go-golems/os-ui-cards';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@go-go-golems/os-core/desktop-core';

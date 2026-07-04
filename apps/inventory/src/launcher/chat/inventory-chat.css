@@ -391,6 +391,67 @@
   opacity: 0.6;
 }
 
+/* --- Generated JS runtime code card ------------------------------------- */
+
+.inventory-code-card-body {
+  padding: 6px 8px;
+}
+
+.inventory-code-card-code {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--color-mac-gray-5);
+  font-family: var(--inv-font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.inventory-code-card-toggle {
+  margin-top: 2px;
+  border: none;
+  background: none;
+  font-size: 10px;
+  color: var(--color-mac-gray-2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.inventory-code-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-code-card-open {
+  font-family: var(--inv-font-sans);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 10px;
+  border: 1px solid var(--color-mac-black);
+  background: var(--color-mac-black);
+  color: var(--color-mac-white);
+  cursor: pointer;
+}
+
+.inventory-code-card-open:hover:not(:disabled) {
+  background: var(--color-mac-white);
+  color: var(--color-mac-black);
+}
+
+.inventory-code-card-open:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.inventory-code-card-error {
+  font-size: 10px;
+  color: var(--color-mac-gray-2);
+}
+
 /* --- Tailwind utility fallbacks (scoped) - mirror assistant CSS --------- */
 
 .inventory-chat-window .space-y-2 > * + * { margin-top: 8px; }
