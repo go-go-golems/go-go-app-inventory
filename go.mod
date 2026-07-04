@@ -1,10 +1,11 @@
 module github.com/go-go-golems/go-go-app-inventory
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/go-go-golems/geppetto v0.13.3
-	github.com/go-go-golems/go-go-os-backend v0.0.7
+	github.com/go-go-golems/go-go-os-backend v0.0.6
+	github.com/go-go-golems/logcopter v0.1.0
 	github.com/go-go-golems/pinocchio v0.11.5
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.42
@@ -27,7 +28,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-go-golems/glazed v1.3.6 // indirect
-	github.com/go-go-golems/logcopter v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/generative-ai-go v0.20.1 // indirect
@@ -58,12 +58,14 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/tools v0.45.0 // indirect
 	google.golang.org/api v0.278.0 // indirect
 	google.golang.org/genai v1.58.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260319201613-d00831a3d3e7 // indirect
@@ -73,3 +75,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+tool github.com/go-go-golems/logcopter/cmd/logcopter-gen
