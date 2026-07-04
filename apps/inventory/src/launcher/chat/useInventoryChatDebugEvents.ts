@@ -3,9 +3,9 @@
  * per-conversation debug event ring buffer via useSyncExternalStore.
  */
 import { useCallback, useSyncExternalStore } from 'react';
-import { inventoryChatDebugStore, type ChatDebugEvent } from './inventoryChatDebugStore';
+import { inventoryChatDebugStore, type InventoryChatDebugEntry } from './inventoryChatDebugStore';
 
-export function useInventoryChatDebugEvents(convId: string): ChatDebugEvent[] {
+export function useInventoryChatDebugEvents(convId: string): InventoryChatDebugEntry[] {
   const subscribe = useCallback(
     (listener: () => void) => inventoryChatDebugStore.subscribe(convId, listener),
     [convId],

@@ -5,40 +5,55 @@
  * chat-provider's ChatDebugEvent stream (collected per-conversation in
  * inventoryChatDebugStore) plus the sessionstream snapshot endpoint.
  *
- * See design-doc/06 §7 (Debug strategy) and §11 Phase C.
+ * Retrofit (ticket WESEN-OS-ASSISTANT-PARITY-2026-07 Phase 4): ingest-time
+ * summaries + stable evt-N keys (from the store), pausedRef-gated ingestion
+ * (events dropped BEFORE setState while paused), and lazy per-expanded-row
+ * JSON. The launcher assistant windows carry the fuller rebuild (family
+ * pills, timeline mirror); these stay lean until Phase 6 dedupes both into
+ * react-chat.
  */
-import { useCallback, useMemo, useState } from 'react';
-import { useInventoryChatDebugEvents } from './useInventoryChatDebugEvents';
-import { inventoryChatDebugStore, type ChatDebugEvent } from './inventoryChatDebugStore';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { inventoryChatDebugStore, type InventoryChatDebugEntry } from './inventoryChatDebugStore';
 import './inventory-chat.css';
 
 type FrameFilter = 'all' | 'raw-ws' | 'parsed-frame' | 'ws-lifecycle' | 'snapshot' | 'ui-event';
 
-function summarizeEvent(event: ChatDebugEvent): string {
-  switch (event.type) {
-    case 'raw-ws':
-      return `${event.size}b ${event.preview}`;
-    case 'parsed-frame':
-      return `${String(event.name ?? event.frameType ?? '')} ord=${String(event.ordinal ?? '')}`;
-    case 'ws-lifecycle':
-      return event.event;
-    case 'snapshot':
-      return `entities=${event.entityCount} dropped=${event.droppedCount} ord=${String(event.ordinal ?? '')}`;
-    case 'ui-event':
-      return `${String(event.name ?? '')} adapter=${event.adapterName ?? ''}`;
-    default:
-      return '';
-  }
-}
-
 export function InventoryEventViewerWindow({ convId }: { convId: string }) {
-  const events = useInventoryChatDebugEvents(convId);
+  // Old os-chat pattern: component-level buffer fed by a subscription whose
+  // callback reads pause state via a ref, so pausing drops events before any
+  // render work; the subscription only re-runs on convId.
+  const [entries, setEntries] = useState<InventoryChatDebugEntry[]>(() => inventoryChatDebugStore.getSnapshot(convId));
   const [filter, setFilter] = useState<FrameFilter>('all');
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
-  const filtered = useMemo(
-    () => events.map((e, i) => ({ e, i })).filter(({ e }) => filter === 'all' || e.type === filter).reverse(),
-    [events, filter],
+  useEffect(() => {
+    setEntries(inventoryChatDebugStore.getSnapshot(convId));
+    setExpandedId(null);
+  }, [convId]);
+
+  useEffect(() => {
+    return inventoryChatDebugStore.subscribe(convId, () => {
+      if (pausedRef.current) return;
+      setEntries(inventoryChatDebugStore.getSnapshot(convId));
+    });
+  }, [convId]);
+
+  const togglePause = useCallback(() => {
+    setPaused((p) => {
+      const next = !p;
+      if (!next) {
+        setEntries(inventoryChatDebugStore.getSnapshot(convId));
+      }
+      return next;
+    });
+  }, [convId]);
+
+  const visible = useMemo(
+    () => (filter === 'all' ? entries : entries.filter((entry) => entry.event.type === filter)).slice().reverse(),
+    [entries, filter],
   );
 
   return (
@@ -57,31 +72,40 @@ export function InventoryEventViewerWindow({ convId }: { convId: string }) {
             <option value="ui-event">ui-event</option>
           </select>
         </label>
-        <span>{filtered.length} frames</span>
+        <span>{visible.length} frames</span>
+        <button type="button" data-part="btn" onClick={togglePause}>
+          {paused ? '▶ Resume' : '⏸ Pause'}
+        </button>
         <button type="button" data-part="btn" onClick={() => inventoryChatDebugStore.clear(convId)}>
           Clear
         </button>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        {filtered.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="inventory-debug-row">no frames captured for this conversation yet</div>
         ) : (
-          filtered.map(({ e, i }) => (
-            <div className="inventory-debug-row" key={i}>
-              <span className="inventory-debug-row-type">{e.type}</span>
+          visible.map((entry) => (
+            <div className="inventory-debug-row" key={entry.id}>
+              <span className="inventory-debug-row-type">{entry.event.type}</span>
               <span
                 style={{ cursor: 'pointer' }}
-                onClick={() => setExpanded(expanded === i ? null : i)}
+                onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
               >
-                {summarizeEvent(e)}
+                {entry.summary}
               </span>
-              {expanded === i ? <pre className="inventory-debug-pre">{JSON.stringify(e, null, 2)}</pre> : null}
+              {expandedId === entry.id ? <ExpandedEntry entry={entry} /> : null}
             </div>
           ))
         )}
       </div>
     </div>
   );
+}
+
+// JSON serialization happens HERE — only for the single expanded row.
+function ExpandedEntry({ entry }: { entry: InventoryChatDebugEntry }) {
+  const json = useMemo(() => JSON.stringify(entry.event, null, 2), [entry]);
+  return <pre className="inventory-debug-pre">{json}</pre>;
 }
 
 interface SnapshotEntity {
@@ -91,7 +115,7 @@ interface SnapshotEntity {
 }
 
 export function InventoryTimelineDebugWindow({ convId, apiBasePrefix }: { convId: string; apiBasePrefix: string }) {
-  const events = useInventoryChatDebugEvents(convId);
+  const entries = useInventoryEntries(convId);
   const [entities, setEntities] = useState<SnapshotEntity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,10 +143,15 @@ export function InventoryTimelineDebugWindow({ convId, apiBasePrefix }: { convId
   }, [apiBasePrefix, convId]);
 
   // Latest projected snapshot as seen live over the websocket, from the store.
-  const lastSnapshotEvent = useMemo(
-    () => [...events].reverse().find((e) => e.type === 'snapshot'),
-    [events],
-  );
+  const lastSnapshotEvent = useMemo(() => {
+    for (let i = entries.length - 1; i >= 0; i -= 1) {
+      const event = entries[i].event;
+      if (event.type === 'snapshot') {
+        return event;
+      }
+    }
+    return null;
+  }, [entries]);
 
   return (
     <div className="inventory-debug-window inventory-chat-window" data-part="timeline-debug">
@@ -136,7 +165,7 @@ export function InventoryTimelineDebugWindow({ convId, apiBasePrefix }: { convId
       {error ? <div className="chat-overlay-error-bar">{error}</div> : null}
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         <div className="inventory-debug-section-title">Live snapshot (last observed over ws)</div>
-        {lastSnapshotEvent && lastSnapshotEvent.type === 'snapshot' ? (
+        {lastSnapshotEvent ? (
           <pre className="inventory-debug-pre">{JSON.stringify(lastSnapshotEvent.entities, null, 2)}</pre>
         ) : (
           <div className="inventory-debug-row">no live snapshot observed yet</div>
@@ -157,4 +186,17 @@ export function InventoryTimelineDebugWindow({ convId, apiBasePrefix }: { convId
       </div>
     </div>
   );
+}
+
+// Local subscription helper (mirrors useInventoryChatDebugEvents; kept here to
+// avoid a circular import when this file is consumed standalone in tests).
+function useInventoryEntries(convId: string): InventoryChatDebugEntry[] {
+  const [entries, setEntries] = useState<InventoryChatDebugEntry[]>(() => inventoryChatDebugStore.getSnapshot(convId));
+  useEffect(() => {
+    setEntries(inventoryChatDebugStore.getSnapshot(convId));
+    return inventoryChatDebugStore.subscribe(convId, () => {
+      setEntries(inventoryChatDebugStore.getSnapshot(convId));
+    });
+  }, [convId]);
+  return entries;
 }

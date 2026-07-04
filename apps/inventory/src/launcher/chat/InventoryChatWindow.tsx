@@ -59,8 +59,8 @@ function InventoryEmptyState() {
 function InventoryDebugPanel({ convId }: { convId: string }) {
   const overlay = useChatSelector(selectOverlay);
   const entities = useChatSelector(selectTimelineEntities);
-  const events = useInventoryChatDebugEvents(convId);
-  const recent = events.slice(-25).reverse();
+  const entries = useInventoryChatDebugEvents(convId);
+  const recent = entries.slice(-25).reverse();
 
   return (
     <div className="inventory-chat-debug-panel" data-part="debug-panel">
@@ -69,7 +69,7 @@ function InventoryDebugPanel({ convId }: { convId: string }) {
         <span>ws: {overlay.wsStatus || '—'}</span>
         <span>run: {overlay.runStatus || '—'}</span>
         <span>entities: {entities.length}</span>
-        <span>frames: {events.length}</span>
+        <span>frames: {entries.length}</span>
         <button type="button" data-part="btn" onClick={() => inventoryChatDebugStore.clear(convId)}>
           Clear
         </button>
@@ -80,22 +80,10 @@ function InventoryDebugPanel({ convId }: { convId: string }) {
       {recent.length === 0 ? (
         <div className="inventory-debug-row">no frames yet</div>
       ) : (
-        recent.map((event, idx) => (
-          <div className="inventory-debug-row" key={`${event.type}-${idx}`}>
-            <span className="inventory-debug-row-type">{event.type}</span>
-            <span>
-              {event.type === 'raw-ws'
-                ? event.preview
-                : event.type === 'parsed-frame'
-                  ? String(event.name ?? event.frameType ?? '')
-                  : event.type === 'ws-lifecycle'
-                    ? event.event
-                    : event.type === 'snapshot'
-                      ? `entities=${event.entityCount} dropped=${event.droppedCount}`
-                      : event.type === 'ui-event'
-                        ? String(event.name ?? '')
-                        : ''}
-            </span>
+        recent.map((entry) => (
+          <div className="inventory-debug-row" key={entry.id}>
+            <span className="inventory-debug-row-type">{entry.event.type}</span>
+            <span>{entry.summary}</span>
           </div>
         ))
       )}
