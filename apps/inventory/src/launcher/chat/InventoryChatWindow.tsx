@@ -97,6 +97,12 @@ function formatNumber(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+function runLabel({ label, model, provider }: { label?: string | null; model?: string | null; provider?: string | null }): string | null {
+  if (model && provider) return `${provider}/${model}`;
+  if (model) return model;
+  return label ?? null;
+}
+
 function InventoryStatsFooter({ label }: { label?: string | null }) {
   const stats = useChatSelector(selectRunStats);
   const [, tick] = useState(0);
@@ -108,7 +114,8 @@ function InventoryStatsFooter({ label }: { label?: string | null }) {
   }, [stats.isStreaming]);
 
   const parts: string[] = [];
-  if (label) parts.push(label);
+  const effectiveLabel = runLabel({ label, model: stats.model, provider: stats.provider });
+  if (effectiveLabel) parts.push(effectiveLabel);
 
   if (stats.isStreaming && stats.streamStartTime) {
     const elapsed = Math.max(0.001, (Date.now() - stats.streamStartTime) / 1000);
@@ -134,8 +141,8 @@ function InventoryStatsFooter({ label }: { label?: string | null }) {
   if (parts.length === 0) {
     return <>{'Streaming via sessionstream'}</>;
   }
-  if (parts.length === 1 && Boolean(label)) {
-    return <>{`${label} · Streaming via sessionstream`}</>;
+  if (parts.length === 1 && Boolean(effectiveLabel)) {
+    return <>{`${effectiveLabel} · Streaming via sessionstream`}</>;
   }
   return <>{parts.join(' · ')}</>;
 }
