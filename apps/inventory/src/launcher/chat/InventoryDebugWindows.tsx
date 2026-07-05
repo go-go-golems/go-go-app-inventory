@@ -8,14 +8,16 @@
  *
  * Pure display building blocks (SyntaxHighlight, StructuredDataTree, toYaml,
  * timelineDebugModel) are reused from @go-go-golems/os-chat (workspace dep).
- * A detached window has no ChatProvider; the timeline is reconstructed via
- * timelineMirror (REST snapshot seed + folded ui-event TimelineMutations).
+ * A detached window has no ChatProvider; the timeline is reconstructed with
+ * react-chat's upstream timeline mirror helpers (REST snapshot seed + folded
+ * ui-event TimelineMutations).
  *
  * See ticket WESEN-OS-ASSISTANT-PARITY-2026-07 §4 for the ported techniques
  * (pausedRef-gated ingestion, 500-row cap, memoized filter projection,
  * count-keyed auto-scroll, lazy per-expanded-row YAML).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { applyTimelineMutationToMirror, createEmptyTimelineMirror, type TimelineMirrorState } from '@go-go-golems/chat-provider';
 import {
   buildConversationYamlForCopy,
   buildEntityYamlForCopy,
@@ -32,7 +34,6 @@ import {
   type InventoryChatDebugEntry,
   type InventoryDebugFamily,
 } from './inventoryChatDebugStore';
-import { emptyMirror, foldMutations, seedMirrorFromSnapshot, type TimelineMirror } from './timelineMirror';
 import './inventory-chat.css';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +77,71 @@ function filterVisibleEntries(
     if (filters[entry.family] === false) return false;
     return !(hideTextPatch && entry.eventType === 'ChatTextPatch');
   });
+}
+
+type TimelineMirror = TimelineMirrorState;
+
+interface TimelineMutationLike {
+  upsert?: TimelineMirror['byId'][string];
+  upsertIfExists?: TimelineMirror['byId'][string];
+  deleteId?: string;
+  status?: string;
+}
+
+function toMillis(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
+}
+
+function unwrapAny(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const payload = value as Record<string, unknown>;
+  const nested = payload.value;
+  if (nested && typeof nested === 'object' && !Array.isArray(nested) && Object.keys(nested).length > 0) {
+    return nested as Record<string, unknown>;
+  }
+  return payload;
+}
+
+function seedMirrorFromSnapshot(entities: Array<Record<string, unknown>>): TimelineMirror {
+  const mirror = createEmptyTimelineMirror();
+  for (const raw of entities) {
+    const id = String(raw.id ?? '');
+    if (!id) continue;
+    mirror.byId[id] = {
+      id,
+      kind: String(raw.kind ?? 'unknown'),
+      createdAt: toMillis(raw.createdAt),
+      version: typeof raw.version === 'number' ? raw.version : undefined,
+      props: unwrapAny(raw.props),
+    };
+    mirror.order.push(id);
+  }
+  return mirror;
+}
+
+function foldMutations(
+  base: TimelineMirror,
+  entries: InventoryChatDebugEntry[],
+  fromSeqExclusive: number,
+): { mirror: TimelineMirror; lastSeq: number } {
+  let working: TimelineMirror | null = null;
+  let lastSeq = fromSeqExclusive;
+  for (const entry of entries) {
+    if (entry.seq <= fromSeqExclusive) continue;
+    lastSeq = Math.max(lastSeq, entry.seq);
+    if (entry.event.type !== 'ui-event') continue;
+    const mutation = (entry.event as { mutation?: unknown }).mutation;
+    if (!mutation || typeof mutation !== 'object') continue;
+    working = applyTimelineMutationToMirror(working ?? base, mutation as TimelineMutationLike, { immutable: true });
+  }
+  return { mirror: working ?? base, lastSeq };
 }
 
 function downloadYaml(fileName: string, yaml: string): void {
@@ -377,7 +443,7 @@ function EventRowPayload({
 
 export function InventoryTimelineDebugWindow({ convId, apiBasePrefix }: { convId: string; apiBasePrefix: string }) {
   const [entries, setEntries] = useState<InventoryChatDebugEntry[]>(() => inventoryChatDebugStore.getSnapshot(convId));
-  const [base, setBase] = useState<{ mirror: TimelineMirror; seq: number }>(() => ({ mirror: emptyMirror(), seq: 0 }));
+  const [base, setBase] = useState<{ mirror: TimelineMirror; seq: number }>(() => ({ mirror: createEmptyTimelineMirror(), seq: 0 }));
   const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [fetchError, setFetchError] = useState<string | null>(null);
 

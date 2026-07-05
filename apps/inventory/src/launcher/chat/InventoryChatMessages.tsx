@@ -1,13 +1,12 @@
 /*
- * Inventory chat message list — local replacement for chat-overlay's
- * ChatMessages. Renders assistant/user text as markdown, thinking traces as
- * collapsible blocks, strips <hypercard:*> artifact blocks from message text
- * (their widgets render separately) with a "building card" placeholder while
- * a block is still streaming, and keeps widget/tool_call rendering on the
- * chat-provider outlets. Unknown kinds render collapsed instead of dropped.
+ * Inventory-specific ChatMessages adapter.
+ *
+ * react-chat now owns generic timeline iteration, widget/tool rendering, and
+ * unknown-kind fallback. This file supplies inventory-specific message body
+ * rendering: markdown, thinking traces, and HyperCard artifact stripping.
  */
 import { useMemo, useState, type RefObject } from 'react';
-import { useChatSelector, selectTimelineEntities, WidgetOutlet, ToolCallOutlet } from '@go-go-golems/chat-provider';
+import { ChatMessages, type TimelineEntityRenderer } from '@go-go-golems/chat-overlay';
 import { Markdown } from './markdown';
 import { stripHypercardBlocks } from './hypercardBlocks';
 
@@ -56,10 +55,11 @@ function MessageBody({ entity }: { entity: TimelineEntityLike }) {
   );
 }
 
-function MessageEntity({ entity }: { entity: TimelineEntityLike }) {
-  const role = entity.props.role;
+const MessageRenderer: TimelineEntityRenderer = ({ entity }) => {
+  const localEntity = entity as TimelineEntityLike;
+  const role = localEntity.props.role;
   if (role === 'thinking') {
-    return <ThinkingBlock entity={entity} />;
+    return <ThinkingBlock entity={localEntity} />;
   }
   const isUser = role === 'user';
   return (
@@ -70,72 +70,11 @@ function MessageEntity({ entity }: { entity: TimelineEntityLike }) {
       ].join(' ')}
     >
       <span className="text-mac-gray-3 text-[10px] uppercase mr-1">{isUser ? 'you' : 'assistant'}</span>
-      <MessageBody entity={entity} />
+      <MessageBody entity={localEntity} />
     </div>
   );
-}
-
-function UnknownEntity({ entity }: { entity: TimelineEntityLike }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="text-xs" style={{ padding: '2px 8px' }}>
-      <span onClick={() => setExpanded((v) => !v)} style={{ cursor: 'pointer' }} className="text-mac-gray-3" title={entity.id}>
-        {expanded ? '▼' : '▶'} [{entity.kind}]
-      </span>
-      {expanded ? (
-        <pre className="whitespace-pre-wrap break-words" style={{ margin: '2px 0 0' }}>
-          {JSON.stringify(entity.props, null, 2)}
-        </pre>
-      ) : null}
-    </div>
-  );
-}
+};
 
 export function InventoryChatMessages({ bottomRef }: { bottomRef?: RefObject<HTMLDivElement | null> }) {
-  const entities = useChatSelector(selectTimelineEntities) as TimelineEntityLike[];
-
-  if (entities.length === 0) {
-    return (
-      <div className="text-mac-gray-3 text-xs italic">
-        No messages yet. Type something below.
-        <div ref={bottomRef} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {entities.map((entity) => {
-        if (entity.kind === 'widget') {
-          return (
-            <WidgetOutlet
-              key={entity.id}
-              instanceId={String(entity.props.instanceId || entity.id)}
-              widgetName={String(entity.props.widgetName || 'unknown')}
-              status={String(entity.props.status || 'READY')}
-              props={(entity.props.props as Record<string, unknown>) || {}}
-            />
-          );
-        }
-        if (entity.kind === 'tool_call') {
-          return (
-            <ToolCallOutlet
-              key={entity.id}
-              toolCallId={String(entity.props.toolCallId || entity.id)}
-              toolName={String(entity.props.toolName || 'unknown')}
-              status={String(entity.props.status || 'requested')}
-              input={entity.props.input}
-              result={entity.props.result}
-              error={entity.props.error as string | undefined}
-            />
-          );
-        }
-        if (entity.kind === 'message') {
-          return <MessageEntity key={entity.id} entity={entity} />;
-        }
-        return <UnknownEntity key={entity.id} entity={entity} />;
-      })}
-      <div ref={bottomRef} />
-    </div>
-  );
+  return <ChatMessages bottomRef={bottomRef} renderers={{ message: MessageRenderer }} />;
 }
