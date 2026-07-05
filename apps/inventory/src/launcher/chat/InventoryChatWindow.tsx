@@ -19,6 +19,7 @@ import {
   useChatClient,
   useChatSelector,
   selectOverlay,
+  selectRunStats,
   selectTimelineEntities,
   type ChatProviderConfig,
   type WidgetDefinition,
@@ -92,6 +93,50 @@ function InventoryDebugPanel({ convId }: { convId: string }) {
   );
 }
 
+function formatNumber(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
+function InventoryStatsFooter({ label }: { label?: string | null }) {
+  const stats = useChatSelector(selectRunStats);
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!stats.isStreaming) return undefined;
+    const timer = window.setInterval(() => tick((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [stats.isStreaming]);
+
+  const parts: string[] = [];
+  if (label) parts.push(label);
+
+  if (stats.isStreaming && stats.streamStartTime) {
+    const elapsed = Math.max(0.001, (Date.now() - stats.streamStartTime) / 1000);
+    const liveTps = Math.round((stats.streamOutputTokens / elapsed) * 10) / 10;
+    parts.push(`streaming: ${formatNumber(stats.streamOutputTokens)} tok · ${liveTps} tok/s`);
+  } else if (stats.lastRun) {
+    const u = stats.lastRun;
+    const usageBits = [`In:${formatNumber(u.inputTokens)}`, `Out:${formatNumber(u.outputTokens)}`];
+    if (u.cachedTokens > 0) usageBits.push(`Cache:${formatNumber(u.cachedTokens)}`);
+    if (u.cacheCreationInputTokens > 0) usageBits.push(`CacheW:${formatNumber(u.cacheCreationInputTokens)}`);
+    if (u.cacheReadInputTokens > 0) usageBits.push(`CacheR:${formatNumber(u.cacheReadInputTokens)}`);
+    parts.push(usageBits.join(' '));
+    if (stats.lastRunDurationMs && stats.lastRunDurationMs > 0) {
+      parts.push(`${Math.round(stats.lastRunDurationMs / 100) / 10}s`);
+      const tps = Math.round((u.outputTokens / (stats.lastRunDurationMs / 1000)) * 10) / 10;
+      if (Number.isFinite(tps) && tps > 0) parts.push(`${tps} tok/s`);
+    }
+    if (stats.completedRuns > 1) {
+      parts.push(`Σ In:${formatNumber(stats.totals.inputTokens)} Out:${formatNumber(stats.totals.outputTokens)}`);
+    }
+  }
+
+  if (parts.length === 0 || (parts.length === 1 && Boolean(label))) {
+    return <>{'Streaming via sessionstream'}</>;
+  }
+  return <>{parts.join(' · ')}</>;
+}
+
 function InventoryChatChrome({
   convId,
   apiBasePrefix,
@@ -157,6 +202,7 @@ function InventoryChatChrome({
   );
 
   const profileLocked = entities.length > 0; // changing profile after first message needs a new session
+  const selectedProfileLabel = profiles.find((p) => p.slug === profile)?.displayName ?? profile;
 
   return (
     <div className="inventory-chat-window" data-part="inventory-chat-window">
@@ -239,7 +285,9 @@ function InventoryChatChrome({
       {debugOpen ? <InventoryDebugPanel convId={convId} /> : null}
 
       <ChatComposer disabled={isStreaming} />
-      <div className="inventory-chat-footer" data-part="footer">Streaming via sessionstream</div>
+      <div className="inventory-chat-footer" data-part="footer">
+        <InventoryStatsFooter label={selectedProfileLabel} />
+      </div>
     </div>
   );
 }
