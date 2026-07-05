@@ -131,8 +131,11 @@ function InventoryStatsFooter({ label }: { label?: string | null }) {
     }
   }
 
-  if (parts.length === 0 || (parts.length === 1 && Boolean(label))) {
+  if (parts.length === 0) {
     return <>{'Streaming via sessionstream'}</>;
+  }
+  if (parts.length === 1 && Boolean(label)) {
+    return <>{`${label} · Streaming via sessionstream`}</>;
   }
   return <>{parts.join(' · ')}</>;
 }
