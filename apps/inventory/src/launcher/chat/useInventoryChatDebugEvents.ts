@@ -1,15 +1,7 @@
-/*
- * React binding for inventoryChatDebugStore. Subscribes a component to the
- * per-conversation debug event ring buffer via useSyncExternalStore.
- */
-import { useCallback, useSyncExternalStore } from 'react';
+/* React binding for inventoryChatDebugStore. */
+import { useChatDebugEntries } from '@go-go-golems/chat-provider';
 import { inventoryChatDebugStore, type InventoryChatDebugEntry } from './inventoryChatDebugStore';
 
 export function useInventoryChatDebugEvents(convId: string): InventoryChatDebugEntry[] {
-  const subscribe = useCallback(
-    (listener: () => void) => inventoryChatDebugStore.subscribe(convId, listener),
-    [convId],
-  );
-  const getSnapshot = useCallback(() => inventoryChatDebugStore.getSnapshot(convId), [convId]);
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useChatDebugEntries(inventoryChatDebugStore, convId);
 }
