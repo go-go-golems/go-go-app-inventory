@@ -3,21 +3,18 @@ import {
   showToast,
 } from '@go-go-golems/os-core';
 import {
-  ChatConversationWindow,
-  ChatProfileSelector,
-  ensureChatModulesRegistered,
-  EventViewerWindow,
-  TimelineDebugWindow,
-  chatProfilesSlice,
-} from '@go-go-golems/os-chat';
-import {
-  HypercardCardRenderer,
   RuntimeSurfaceSessionHost,
   buildRuntimeDebugWindowPayload,
   HYPERCARD_RUNTIME_DEBUG_APP_ID,
   registerRuntimePackage,
   registerRuntimeSurfaceType,
 } from '@go-go-golems/os-scripting';
+import { InventoryChatWindow } from './chat/InventoryChatWindow';
+import { InventoryEventViewerWindow, InventoryTimelineDebugWindow } from './chat/InventoryDebugWindows';
+import { inventoryCardWidget } from './chat/inventoryCardWidget';
+import { inventoryCodeCardWidget } from './chat/inventoryCodeCardWidget';
+
+const INVENTORY_CHAT_WIDGETS = [inventoryCardWidget, inventoryCodeCardWidget];
 import { KANBAN_RUNTIME_PACKAGE, KANBAN_V1_RUNTIME_SURFACE_TYPE } from '@go-go-golems/os-kanban';
 import { UI_CARD_V1_RUNTIME_SURFACE_TYPE, UI_RUNTIME_PACKAGE } from '@go-go-golems/os-ui-cards';
 import { openWindow, type OpenWindowPayload, type WindowInstance } from '@go-go-golems/os-core/desktop-core';
@@ -86,8 +83,6 @@ const INVENTORY_STARTER_SUGGESTIONS = [
   'What items are low stock?',
   'Summarize today sales',
 ];
-
-ensureChatModulesRegistered();
 
 function nextInstanceId(prefix: string): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -334,12 +329,8 @@ function resolveMessageContextPayload(invocation: DesktopCommandInvocation): Mes
   };
 }
 
-function buildFocusedChatMenuSections(args: {
-  convId: string;
-  availableProfiles: Array<{ slug: string; display_name?: string; is_default?: boolean }>;
-  selectedProfile: string | null;
-}): DesktopActionSection[] {
-  const { convId, availableProfiles, selectedProfile } = args;
+function buildFocusedChatMenuSections(args: { convId: string }): DesktopActionSection[] {
+  const { convId } = args;
   const chatSection: DesktopActionSection = {
     id: 'chat',
     label: 'Chat',
@@ -360,31 +351,9 @@ function buildFocusedChatMenuSections(args: {
     ],
   };
 
-  const profileItems: DesktopActionEntry[] = availableProfiles.length
-    ? availableProfiles.map((profile) => ({
-        id: `chat-profile-${convId}-${profile.slug}`,
-        label: `${profile.display_name?.trim() || profile.slug}${profile.is_default ? ' (default)' : ''}`,
-        commandId: buildChatProfileSelectCommand(convId, profile.slug),
-        checked: selectedProfile === profile.slug,
-      }))
-    : [
-        {
-          id: `chat-profile-none-${convId}`,
-          label: 'No profiles',
-          commandId: buildChatProfileSelectCommand(convId, null),
-          disabled: true,
-        },
-      ];
-
-  return [
-    chatSection,
-    {
-      id: 'profile',
-      label: 'Profile',
-      merge: 'replace',
-      items: profileItems,
-    },
-  ];
+  // Profile selection lives in the chat window header now (react-chat path);
+  // the legacy os-chat profile submenu was removed. See design-doc/06 §6.
+  return [chatSection];
 }
 
 function buildFocusedChatContextActions(convId: string): DesktopActionEntry[] {
@@ -510,18 +479,14 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
       id: 'inventory.chat.profile-select',
       priority: 120,
       matches: (commandId) => parseInventoryChatCommand(commandId)?.kind === 'profile-select',
-      run: (commandId, ctx) => {
+      run: (commandId) => {
         const parsed = parseInventoryChatCommand(commandId);
         if (!parsed || parsed.kind !== 'profile-select') {
           return 'pass';
         }
-        const scopeKey = `conv:${parsed.convId}`;
-        ctx.dispatch(
-          chatProfilesSlice.actions.setSelectedProfile({
-            profile: parsed.profile ?? null,
-            scopeKey,
-          }),
-        );
+        // Profile selection now lives in the chat window header (react-chat
+        // path); the legacy chatProfilesSlice is gone. See design-doc/06 §6.
+        hostContext.dispatch(showToast('Select a profile from the Inventory chat window header'));
         return 'handled';
       },
     },
@@ -537,7 +502,7 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
           parsed?.kind === 'conversation-export-transcript'
         );
       },
-      run: (commandId, ctx) => {
+      run: (commandId) => {
         const parsed = parseInventoryChatCommand(commandId);
         if (!parsed) {
           return 'pass';
@@ -559,24 +524,9 @@ function createInventoryCommands(hostContext: LauncherHostContext): DesktopComma
         }
 
         if (parsed.kind === 'conversation-change-profile') {
-          const state = (ctx.getState?.() ?? {}) as InventoryRootState;
-          const profiles = state.chatProfiles?.availableProfiles ?? [];
-          if (profiles.length === 0) {
-            return 'pass';
-          }
-          const scopeKey = `conv:${parsed.convId}`;
-          const currentProfile =
-            state.chatProfiles?.selectedByScope?.[scopeKey]?.profile ??
-            state.chatProfiles?.selectedProfile ??
-            null;
-          const currentIndex = profiles.findIndex((profile) => profile.slug === currentProfile);
-          const nextProfile = profiles[(currentIndex + 1 + profiles.length) % profiles.length];
-          ctx.dispatch(
-            chatProfilesSlice.actions.setSelectedProfile({
-              profile: nextProfile?.slug ?? null,
-              scopeKey,
-            }),
-          );
+          // Profile is bound at session creation in the react-chat window; there
+          // is no live profile slice to cycle. See design-doc/06 §5–§6.
+          hostContext.dispatch(showToast('Change the profile from the Inventory chat window header'));
           return 'handled';
         }
 
@@ -856,125 +806,51 @@ function InventoryFolderWindow() {
   );
 }
 
-async function copyTextToClipboard(text: string): Promise<void> {
-  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  throw new Error('clipboard unavailable');
-}
-
+// InventoryChatAssistantWindow is a thin desktop wrapper: it keeps the focused
+// window's menu sections / context actions registered with the launcher shell,
+// then renders the react-chat InventoryChatWindow (chat-provider transport). The
+// legacy os-chat ChatConversationWindow and its SEM transport are gone; see
+// design-doc/06.
 function InventoryChatAssistantWindow({
   convId,
   apiBasePrefix,
-  windowId,
 }: {
   convId: string;
   apiBasePrefix: string;
-  windowId: string;
 }) {
   const dispatch = useDispatch();
-  const [renderMode, setRenderMode] = useState<'normal' | 'debug'>('normal');
-  const [copyConvStatus, setCopyConvStatus] = useState<'idle' | 'copied' | 'error'>('idle');
-  const availableProfiles = useSelector(
-    (state: InventoryRootState) => state.chatProfiles?.availableProfiles ?? [],
-  );
-  const selectedProfile = useSelector((state: InventoryRootState) => {
-    const scopeKey = `conv:${convId}`;
-    return (
-      state.chatProfiles?.selectedByScope?.[scopeKey]?.profile ??
-      state.chatProfiles?.selectedProfile ??
-      null
-    );
-  });
 
-  const focusedMenuSections = useMemo(
-    () =>
-      buildFocusedChatMenuSections({
-        convId,
-        availableProfiles,
-        selectedProfile,
-      }),
-    [availableProfiles, convId, selectedProfile],
+  const focusedMenuSections = useMemo(() => buildFocusedChatMenuSections({ convId }), [convId]);
+  const focusedContextActions = useMemo(
+    () => [...buildFocusedChatContextActions(convId), ...buildConversationContextActions(convId)],
+    [convId],
   );
-  const focusedContextActions = useMemo(() => buildFocusedChatContextActions(convId), [convId]);
-  const conversationContextActions = useMemo(() => buildConversationContextActions(convId), [convId]);
 
   useRegisterWindowMenuSections(focusedMenuSections);
   useRegisterWindowContextActions(focusedContextActions);
 
-  const openEventViewer = useCallback(() => {
-    dispatch(openWindow(buildEventViewerWindowPayload(convId)));
-  }, [convId, dispatch]);
+  const openEventViewer = useCallback(
+    (cid: string) => {
+      dispatch(openWindow(buildEventViewerWindowPayload(cid)));
+    },
+    [dispatch],
+  );
 
-  const openTimelineDebug = useCallback(() => {
-    dispatch(openWindow(buildTimelineDebugWindowPayload(convId)));
-  }, [convId, dispatch]);
-
-  const copyConversationId = useCallback(() => {
-    copyTextToClipboard(convId)
-      .then(() => {
-        setCopyConvStatus('copied');
-      })
-      .catch(() => {
-        setCopyConvStatus('error');
-      })
-      .finally(() => {
-        setTimeout(() => setCopyConvStatus('idle'), 1300);
-      });
-  }, [convId]);
+  const openTimelineDebug = useCallback(
+    (cid: string) => {
+      dispatch(openWindow(buildTimelineDebugWindowPayload(cid)));
+    },
+    [dispatch],
+  );
 
   return (
-    <ChatConversationWindow
+    <InventoryChatWindow
       convId={convId}
-      windowId={windowId}
-      basePrefix={apiBasePrefix}
-      title="Inventory Chat"
-      profilePolicy={{ kind: 'selectable', scopeKey: `conv:${convId}` }}
+      apiBasePrefix={apiBasePrefix}
       starterSuggestions={INVENTORY_STARTER_SUGGESTIONS}
-      renderMode={renderMode}
-      timelineRenderers={{
-        'hypercard.card.v2': HypercardCardRenderer,
-      }}
-      conversationContextActions={conversationContextActions}
-      headerActions={
-        <>
-          <ChatProfileSelector convId={convId} basePrefix={apiBasePrefix} scopeKey={`conv:${convId}`} />
-          <button type="button" data-part="btn" onClick={openEventViewer} style={{ fontSize: 10, padding: '1px 6px' }}>
-            🧭 Events
-          </button>
-          <button
-            type="button"
-            data-part="btn"
-            onClick={openTimelineDebug}
-            style={{ fontSize: 10, padding: '1px 6px' }}
-          >
-            🧱 Timeline
-          </button>
-          <button
-            type="button"
-            data-part="btn"
-            onClick={copyConversationId}
-            title={convId}
-            style={{ fontSize: 10, padding: '1px 6px' }}
-          >
-            {copyConvStatus === 'copied'
-              ? '✅ Copied'
-              : copyConvStatus === 'error'
-                ? '⚠ Copy failed'
-                : '📋 Copy Conv ID'}
-          </button>
-          <button
-            type="button"
-            data-part="btn"
-            data-state={renderMode === 'debug' ? 'active' : undefined}
-            onClick={() => setRenderMode((mode) => (mode === 'normal' ? 'debug' : 'normal'))}
-            style={{ fontSize: 10, padding: '1px 6px' }}
-          >
-            {renderMode === 'debug' ? '🔍 Debug ON' : '🔍 Debug'}
-          </button>
-        </>
-      }
+      widgets={INVENTORY_CHAT_WIDGETS}
+      onOpenEventViewer={openEventViewer}
+      onOpenTimelineDebug={openTimelineDebug}
     />
   );
 }
@@ -987,7 +863,6 @@ export interface InventoryLauncherAppWindowProps {
 
 export function InventoryLauncherAppWindow({
   instanceId,
-  windowId,
   apiBasePrefix,
 }: InventoryLauncherAppWindowProps): ReactNode {
   if (instanceId === FOLDER_INSTANCE) {
@@ -995,15 +870,15 @@ export function InventoryLauncherAppWindow({
   }
   if (instanceId.startsWith(CHAT_INSTANCE_PREFIX)) {
     const convId = instanceId.slice(CHAT_INSTANCE_PREFIX.length);
-    return <InventoryChatAssistantWindow convId={convId} windowId={windowId} apiBasePrefix={apiBasePrefix} />;
+    return <InventoryChatAssistantWindow convId={convId} apiBasePrefix={apiBasePrefix} />;
   }
   if (instanceId.startsWith(EVENT_VIEW_INSTANCE_PREFIX)) {
     const convId = instanceId.slice(EVENT_VIEW_INSTANCE_PREFIX.length);
-    return <EventViewerWindow conversationId={convId} />;
+    return <InventoryEventViewerWindow convId={convId} />;
   }
   if (instanceId.startsWith(TIMELINE_DEBUG_INSTANCE_PREFIX)) {
     const convId = instanceId.slice(TIMELINE_DEBUG_INSTANCE_PREFIX.length);
-    return <TimelineDebugWindow conversationId={convId} />;
+    return <InventoryTimelineDebugWindow convId={convId} apiBasePrefix={apiBasePrefix} />;
   }
   if (instanceId === REDUX_PERF_INSTANCE) {
     return <ReduxPerfWindow />;

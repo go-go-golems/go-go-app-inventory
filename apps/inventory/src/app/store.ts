@@ -1,9 +1,3 @@
-import {
-  chatProfilesReducer,
-  chatSessionReducer,
-  chatWindowReducer,
-  timelineReducer,
-} from '@go-go-golems/os-chat';
 import { createAppStore } from '@go-go-golems/os-scripting';
 import { confirmRuntimeReducer } from '@go-go-golems/os-confirm';
 import { inventoryReducer } from '../features/inventory/inventorySlice';
@@ -13,11 +7,7 @@ export const { store, createStore: createInventoryStore } = createAppStore(
   {
     inventory: inventoryReducer,
     sales: salesReducer,
-    timeline: timelineReducer,
-    chatSession: chatSessionReducer,
-    chatWindow: chatWindowReducer,
     confirmRuntime: confirmRuntimeReducer,
-    chatProfiles: chatProfilesReducer,
   },
   {
     enableReduxDiagnostics: import.meta.env.DEV,

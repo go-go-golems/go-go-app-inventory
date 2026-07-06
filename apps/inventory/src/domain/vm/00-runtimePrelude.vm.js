@@ -130,7 +130,9 @@ function parseTags(value) {
 defineRuntimeBundle(() => ({
   id: 'inventory',
   title: 'Shop Inventory',
-  packageIds: ["ui"],
+  // 'kanban' included so model-generated kanban.v1 cards can run in
+  // inventory surface sessions (keep in sync with domain/stack.ts).
+  packageIds: ["ui", "kanban"],
   description: 'Inventory HyperCard stack using the ui.card.v1 DSL.',
   initialSessionState: {
     lowStockThreshold: 3,

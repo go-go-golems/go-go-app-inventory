@@ -51,7 +51,9 @@ export const STACK: RuntimeBundleDefinition = {
   icon: '📇',
   homeSurface: 'home',
   plugin: {
-    packageIds: ['ui'],
+    // 'kanban' included so model-generated kanban.v1 cards (chat codeCard →
+    // registerRuntimeSurface) can execute in inventory surface sessions.
+    packageIds: ['ui', 'kanban'],
     bundleCode: INVENTORY_PLUGIN_BUNDLE,
     capabilities: {
       domain: ['inventory', 'sales'],

@@ -12,7 +12,6 @@ It owns both:
   - `pkg/backendmodule`
   - `pkg/inventorydb`
   - `pkg/inventorytools`
-  - `pkg/pinoweb`
   - related inventory API/service packages
 - Frontend workspace:
   - `apps/inventory`

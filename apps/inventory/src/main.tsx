@@ -6,7 +6,6 @@ import { store } from './app/store';
 
 // Load engine base theme tokens
 import '@go-go-golems/os-core/theme';
-import '@go-go-golems/os-chat/theme';
 import '@go-go-golems/os-kanban/theme';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
