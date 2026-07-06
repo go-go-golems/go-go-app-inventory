@@ -16,7 +16,7 @@
  * (pausedRef-gated ingestion, 500-row cap, memoized filter projection,
  * count-keyed auto-scroll, lazy per-expanded-row YAML).
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { applyTimelineMutationToMirror, createEmptyTimelineMirror, type TimelineMirrorState } from '@go-go-golems/chat-provider';
 import {
   buildConversationYamlForCopy,
@@ -367,7 +367,7 @@ export function InventoryEventViewerWindow({ convId }: { convId: string }) {
   );
 }
 
-function EventRow({
+const EventRow = memo(function EventRow({
   entry,
   expanded,
   copyFeedback,
@@ -410,7 +410,7 @@ function EventRow({
       {expanded && <EventRowPayload entry={entry} copyFeedback={copyFeedback} onCopy={onCopy} />}
     </div>
   );
-}
+});
 
 // Payload YAML is computed HERE — only for expanded rows.
 function EventRowPayload({
